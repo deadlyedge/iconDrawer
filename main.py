@@ -85,9 +85,10 @@ class DrawerListWidget(QListWidget):
                 if item == self.lockedItem:
                     self.locked = False
                     self.lockedItem = None
-                    
-            self.locked = True
-            self.lockedItem = item
+            else:
+                self.locked = True
+                self.lockedItem = item
+
             main_win = cast(MainWindow, self.window())
             main_win.update_drawer_content(item)
         super().mousePressEvent(event)
@@ -210,7 +211,7 @@ class MainWindow(QMainWindow):
         leftPanel.setFixedSize(210, 300)
         # leftPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         leftPanel.setStyleSheet("background: black;")
-        
+
         leftLayout = QVBoxLayout(leftPanel)
         leftLayout.setContentsMargins(5, 5, 5, 5)
         leftLayout.setSpacing(10)
@@ -231,8 +232,8 @@ class MainWindow(QMainWindow):
         leftLayout.addWidget(self.addButton)
         self.addButton.clicked.connect(self.add_drawer)
 
-        leftLayout.addStretch()  # 保留顶部布局
-        mainLayout.addWidget(leftPanel)
+        # leftLayout.addStretch()  # 保留顶部布局
+        mainLayout.addWidget(leftPanel, alignment=Qt.AlignmentFlag.AlignTop)
 
         # 右侧面板：固定drawercontent的位置和大小，窗口右侧，高度超过drawerlist，未点选list时不可见
         rightPanel = QWidget()
@@ -249,13 +250,12 @@ class MainWindow(QMainWindow):
         self.drawerContent.setStyleSheet("background-color: black;")
         self.drawerContent.setVisible(False)
         rightLayout.addWidget(self.drawerContent)
-        
+
         # mainLayout.addWidget(self.drawerContent)
 
-        mainLayout.addWidget(rightPanel)
+        mainLayout.addWidget(rightPanel, alignment=Qt.AlignmentFlag.AlignTop)
         mainLayout.addStretch()  # 保留顶部布局
-        
-        
+
         self.load_drawers()
 
     def load_drawers(self) -> None:
