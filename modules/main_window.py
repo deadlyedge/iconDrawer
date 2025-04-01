@@ -126,7 +126,7 @@ class MainWindow(QMainWindow):
             self.drawerContent.setVisible(True)
 
     def clear_drawer_content(self) -> None:
-        self.drawerContent.layout.clear()
+        # self.drawerContent.layout.clear()
         self.drawerContent.setVisible(False)
 
     def open_settings(self) -> None:
