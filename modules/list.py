@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QWidget,
 )
+# from PySide6.QtCore import Qt, QPoint
 from typing import Optional, cast
 
 
@@ -21,7 +22,8 @@ class DrawerListWidget(QListWidget):
             main_win.update_drawer_content(item)
 
     def mousePressEvent(self, event) -> None:
-        item = self.itemAt(event.pos())
+        pos = event.position().toPoint()
+        item = self.itemAt(pos)
         if item:
             if self.locked:
                 if item == self.lockedItem:

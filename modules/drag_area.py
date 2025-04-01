@@ -17,7 +17,7 @@ class DragArea(QWidget):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        self.setFixedSize(200, 60)
+        # self.setFixedSize(200, 40)
         self.setStyleSheet("background-color: rgba(0, 0, 0, 200);")
         self._dragPos: Optional[QPoint] = None
 

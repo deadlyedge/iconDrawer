@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(centralWidget)
         mainLayout = QHBoxLayout(centralWidget)
         mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.setSpacing(0)
 
         # 左侧面板：固定位置在窗口左侧偏上，包括dragarea和drawerlist及添加按钮
         leftPanel = QWidget()
@@ -44,12 +45,12 @@ class MainWindow(QMainWindow):
         leftPanel.setStyleSheet("background: black;")
 
         leftLayout = QVBoxLayout(leftPanel)
-        leftLayout.setContentsMargins(5, 5, 5, 5)
-        leftLayout.setSpacing(10)
+        leftLayout.setContentsMargins(0, 0, 0, 0)
+        leftLayout.setSpacing(0)
 
         # 固定dragarea：与drawerlist等宽，固定深色背景
         self.dragArea = DragArea(leftPanel)
-        self.dragArea.setFixedSize(210, 60)
+        # self.dragArea.setFixedSize(210, 32)
         leftLayout.addWidget(self.dragArea)
 
         # 固定drawerlist：固定大小，位于dragarea下方，窗口左边偏上
@@ -59,7 +60,7 @@ class MainWindow(QMainWindow):
 
         # 添加按钮，固定宽度
         self.addButton = QPushButton("添加抽屉", leftPanel)
-        self.addButton.setFixedWidth(210)
+        # self.addButton.setFixedWidth(210)
         leftLayout.addWidget(self.addButton)
         self.addButton.clicked.connect(self.add_drawer)
 
@@ -67,24 +68,28 @@ class MainWindow(QMainWindow):
         mainLayout.addWidget(leftPanel, alignment=Qt.AlignmentFlag.AlignTop)
 
         # 右侧面板：固定drawercontent的位置和大小，窗口右侧，高度超过drawerlist，未点选list时不可见
-        rightPanel = QWidget()
-        rightPanel.setFixedSize(600, 600)
-        # rightPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        rightPanel.setStyleSheet("background: transparent;")
+        # rightPanel = QWidget()
+        # rightPanel.setFixedSize(640, 640)
+        # rightPanel.setContentsMargins(0, 0, 0, 0)
 
-        rightLayout = QVBoxLayout(rightPanel)
-        rightLayout.setContentsMargins(0, 0, 0, 0)
-        rightLayout.setSpacing(0)
+        # rightPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        # rightPanel.setStyleSheet("background: yellow; border: 0;")
+
+        # rightLayout = QVBoxLayout(rightPanel)
+        # rightLayout.setContentsMargins(0, 0, 0, 0)
+        # rightLayout.setSpacing(0)
 
         self.drawerContent = DrawerContentWidget()
-        self.drawerContent.setFixedSize(600, 600)
-        self.drawerContent.setStyleSheet("background-color: black;")
+        self.drawerContent.setFixedSize(640, 640)
+        self.drawerContent.setStyleSheet("background-color: black; border: 0;")
         self.drawerContent.setVisible(False)
-        rightLayout.addWidget(self.drawerContent)
+        self.drawerContent.setContentsMargins(0, 0, 0, 0)
 
-        # mainLayout.addWidget(self.drawerContent)
+        # rightLayout.addWidget(self.drawerContent)
 
-        mainLayout.addWidget(rightPanel, alignment=Qt.AlignmentFlag.AlignTop)
+        mainLayout.addWidget(self.drawerContent, alignment=Qt.AlignmentFlag.AlignTop)
+
+        # mainLayout.addWidget(rightPanel, alignment=Qt.AlignmentFlag.AlignTop)
         mainLayout.addStretch()  # 保留顶部布局
 
         self.load_drawers()
@@ -121,7 +126,7 @@ class MainWindow(QMainWindow):
             self.drawerContent.setVisible(True)
 
     def clear_drawer_content(self) -> None:
-        self.drawerContent.listWidget.clear()
+        self.drawerContent.layout.clear()
         self.drawerContent.setVisible(False)
 
     def open_settings(self) -> None:
