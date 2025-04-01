@@ -13,8 +13,12 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QFileDialog,
+    QLabel,
+    QDialog,
+    QDialogButtonBox,
+    QSizePolicy,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPoint
 from PySide6.QtGui import QIcon
 
 # 使用整型常量代替 Qt.UserRole（其值为 32）
@@ -67,7 +71,7 @@ class DrawerListWidget(QListWidget):
         self.locked: bool = False
         self.lockedItem: Optional[QListWidgetItem] = None
         self.setMouseTracking(True)
-        self.itemEntered.connect(self.on_item_entered)
+        # self.itemEntered.connect(self.on_item_entered)
 
     def on_item_entered(self, item: QListWidgetItem) -> None:
         if not self.locked:
@@ -77,9 +81,13 @@ class DrawerListWidget(QListWidget):
     def mousePressEvent(self, event) -> None:
         item = self.itemAt(event.pos())
         if item:
+            if self.locked:
+                if item == self.lockedItem:
+                    self.locked = False
+                    self.lockedItem = None
+                    
             self.locked = True
             self.lockedItem = item
-            # 调用 update_drawer_content 替代重复的 lock_content 方法
             main_win = cast(MainWindow, self.window())
             main_win.update_drawer_content(item)
         super().mousePressEvent(event)
@@ -87,7 +95,7 @@ class DrawerListWidget(QListWidget):
     def leaveEvent(self, event) -> None:
         if not self.locked:
             main_win = cast(MainWindow, self.window())
-            main_win.clear_content()
+            main_win.clear_drawer_content()
         super().leaveEvent(event)
 
 
@@ -115,31 +123,139 @@ class DrawerContentWidget(QWidget):
                     self.listWidget.addItem(item)
             except OSError as e:
                 print(f"读取文件夹内容时出错: {e}")
+        else:
+            self.listWidget.clear()
+
+
+class DragArea(QWidget):
+    """
+    一个用于拖拽窗口的区域，同时包含拖拽图标和设置图标。
+    增强了高度和背景色，以提高可见性，并确保设置按钮可见。
+    """
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setFixedSize(200, 60)
+        self.setStyleSheet("background-color: rgba(0, 0, 0, 200);")
+        self._dragPos: Optional[QPoint] = None
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(10, 0, 10, 0)
+        layout.setSpacing(10)
+
+        # 拖拽图标（汉堡图标），字号增大
+        self.dragLabel = QLabel("☰", self)
+        self.dragLabel.setStyleSheet("font-size: 28px; color: white;")
+        layout.addWidget(self.dragLabel)
+
+        layout.addStretch()
+
+        # 设置图标按钮
+        self.settingsButton = QPushButton(self)
+        settings_icon = QIcon.fromTheme("preferences-system")
+        if settings_icon.isNull():
+            self.settingsButton.setText("设置")
+        else:
+            self.settingsButton.setIcon(settings_icon)
+        self.settingsButton.setFixedSize(40, 40)
+        self.settingsButton.setStyleSheet(
+            "background-color: transparent; border: none; color: white;"
+        )
+        layout.addWidget(self.settingsButton)
+
+        self.settingsButton.clicked.connect(self.on_settings_clicked)
+
+    def on_settings_clicked(self) -> None:
+        main_window = self.window()
+        if isinstance(main_window, MainWindow):
+            main_window.open_settings()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            main_window = self.window()
+            self._dragPos = (
+                event.globalPosition().toPoint() - main_window.frameGeometry().topLeft()
+            )
+            event.accept()
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._dragPos is not None and event.buttons() & Qt.MouseButton.LeftButton:
+            main_window = self.window()
+            newPos = event.globalPosition().toPoint() - self._dragPos
+            main_window.move(newPos)
+            event.accept()
+
+    def mouseReleaseEvent(self, event) -> None:
+        self._dragPos = None
+        event.accept()
 
 
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("图标抽屉管理")
+        self.setWindowTitle("图标抽屉管理器")
+        self.setWindowOpacity(0.8)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
+
+        # 主区域：水平布局划分左右两部分
         centralWidget = QWidget()
+        centralWidget.setStyleSheet("background: transparent;")
         self.setCentralWidget(centralWidget)
         mainLayout = QHBoxLayout(centralWidget)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
 
-        # 左侧面板：抽屉列表及“添加抽屉”按钮
+        # 左侧面板：固定位置在窗口左侧偏上，包括dragarea和drawerlist及添加按钮
         leftPanel = QWidget()
+        leftPanel.setFixedSize(210, 300)
+        # leftPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        leftPanel.setStyleSheet("background: black;")
+        
         leftLayout = QVBoxLayout(leftPanel)
+        leftLayout.setContentsMargins(5, 5, 5, 5)
+        leftLayout.setSpacing(10)
+
+        # 固定dragarea：与drawerlist等宽，固定深色背景
+        self.dragArea = DragArea(leftPanel)
+        self.dragArea.setFixedSize(210, 60)
+        leftLayout.addWidget(self.dragArea)
+
+        # 固定drawerlist：固定大小，位于dragarea下方，窗口左边偏上
         self.drawerList = DrawerListWidget(leftPanel)
+        self.drawerList.setFixedSize(210, 240)
         leftLayout.addWidget(self.drawerList)
-        self.addButton = QPushButton("添加抽屉")
+
+        # 添加按钮，固定宽度
+        self.addButton = QPushButton("添加抽屉", leftPanel)
+        self.addButton.setFixedWidth(210)
         leftLayout.addWidget(self.addButton)
         self.addButton.clicked.connect(self.add_drawer)
 
+        leftLayout.addStretch()  # 保留顶部布局
         mainLayout.addWidget(leftPanel)
 
-        # 右侧面板：抽屉内容显示
-        self.drawerContent = DrawerContentWidget()
-        mainLayout.addWidget(self.drawerContent)
+        # 右侧面板：固定drawercontent的位置和大小，窗口右侧，高度超过drawerlist，未点选list时不可见
+        rightPanel = QWidget()
+        rightPanel.setFixedSize(600, 600)
+        # rightPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        rightPanel.setStyleSheet("background: transparent;")
 
+        rightLayout = QVBoxLayout(rightPanel)
+        rightLayout.setContentsMargins(0, 0, 0, 0)
+        rightLayout.setSpacing(0)
+
+        self.drawerContent = DrawerContentWidget()
+        self.drawerContent.setFixedSize(600, 600)
+        self.drawerContent.setStyleSheet("background-color: black;")
+        self.drawerContent.setVisible(False)
+        rightLayout.addWidget(self.drawerContent)
+        
+        # mainLayout.addWidget(self.drawerContent)
+
+        mainLayout.addWidget(rightPanel)
+        mainLayout.addStretch()  # 保留顶部布局
+        
+        
         self.load_drawers()
 
     def load_drawers(self) -> None:
@@ -171,13 +287,27 @@ class MainWindow(QMainWindow):
         folder = item.data(USER_ROLE)
         if isinstance(folder, str):
             self.drawerContent.update_content(folder)
+            self.drawerContent.setVisible(True)
 
-    def clear_content(self) -> None:
+    def clear_drawer_content(self) -> None:
         self.drawerContent.listWidget.clear()
+        self.drawerContent.setVisible(False)
+
+    def open_settings(self) -> None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("设置")
+        dialog_layout = QVBoxLayout(dialog)
+        label = QLabel("此处为设置窗口。", dialog)
+        dialog_layout.addWidget(label)
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok, parent=dialog)
+        button_box.accepted.connect(dialog.accept)
+        dialog_layout.addWidget(button_box)
+        dialog.exec()
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
+    mainWindow = MainWindow()
+    mainWindow.resize(800, 600)
+    mainWindow.show()
     sys.exit(app.exec())
