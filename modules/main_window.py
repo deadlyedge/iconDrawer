@@ -1,5 +1,5 @@
 import os
-from typing import List, Dict
+from typing import List, Dict, Optional # Added Optional
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -25,77 +25,86 @@ USER_ROLE: int = 32
 class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
+        self._setup_window_properties()
+        self._setup_ui()
+        self._connect_signals()
+        # Initialize state variables moved from DrawerListWidget
+        self.locked: bool = False
+        self.lockedItem: Optional[QListWidgetItem] = None
+        self.load_drawers()
+
+    def _setup_window_properties(self) -> None:
+        """Sets the main window properties."""
         self.setWindowTitle("图标抽屉管理器")
         self.setWindowOpacity(0.8)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
 
-        # 主区域：水平布局划分左右两部分
+    def _setup_ui(self) -> None:
+        """Sets up the main UI layout and widgets."""
         centralWidget = QWidget()
-        # centralWidget.setStyleSheet("background: transparent;") # Style moved to QSS or handled by QMainWindow style
         self.setCentralWidget(centralWidget)
+
         mainLayout = QHBoxLayout(centralWidget)
         mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.setSpacing(0)
 
-        # 左侧面板：固定位置在窗口左侧偏上，包括dragarea和drawerlist及添加按钮
+        self._setup_left_panel(mainLayout)
+        self._setup_right_panel(mainLayout)
+
+        mainLayout.addStretch() # Keep content aligned to the top-left
+
+    def _setup_left_panel(self, mainLayout: QHBoxLayout) -> None:
+        """Creates and configures the left panel."""
         leftPanel = QWidget()
-        leftPanel.setObjectName("leftPanel") # Set object name for QSS
+        leftPanel.setObjectName("leftPanel")
         leftPanel.setFixedSize(210, 300)
-        # leftPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        # leftPanel.setStyleSheet("background: black;") # Style moved to QSS
 
         leftLayout = QVBoxLayout(leftPanel)
         leftLayout.setContentsMargins(0, 0, 0, 0)
         leftLayout.setSpacing(0)
 
-        # 固定dragarea：与drawerlist等宽，固定深色背景
+        # Drag area
         self.dragArea = DragArea(leftPanel)
-        # self.dragArea.setFixedSize(210, 32)
         leftLayout.addWidget(self.dragArea)
 
-        # 固定drawerlist：固定大小，位于dragarea下方，窗口左边偏上
+        # Drawer list
         self.drawerList = DrawerListWidget(leftPanel)
         self.drawerList.setFixedSize(210, 240)
         leftLayout.addWidget(self.drawerList)
 
-        # 添加按钮，固定宽度
+        # Add button
         self.addButton = QPushButton("添加抽屉", leftPanel)
-        self.addButton.setObjectName("addButton") # Set object name for QSS
-        # self.addButton.setFixedWidth(210)
+        self.addButton.setObjectName("addButton")
         leftLayout.addWidget(self.addButton)
-        self.addButton.clicked.connect(self.add_drawer)
 
-        # leftLayout.addStretch()  # 保留顶部布局
         mainLayout.addWidget(leftPanel, alignment=Qt.AlignmentFlag.AlignTop)
 
-        # 右侧面板：固定drawercontent的位置和大小，窗口右侧，高度超过drawerlist，未点选list时不可见
-        # rightPanel = QWidget()
-        # rightPanel.setFixedSize(640, 640)
-        # rightPanel.setContentsMargins(0, 0, 0, 0)
-
-        # rightPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        # rightPanel.setStyleSheet("background: yellow; border: 0;")
-
-        # rightLayout = QVBoxLayout(rightPanel)
-        # rightLayout.setContentsMargins(0, 0, 0, 0)
-        # rightLayout.setSpacing(0)
-
+    def _setup_right_panel(self, mainLayout: QHBoxLayout) -> None:
+        """Creates and configures the right content panel."""
         self.drawerContent = DrawerContentWidget()
-        self.drawerContent.setObjectName("drawerContent") # Set object name for QSS
+        self.drawerContent.setObjectName("drawerContent")
         self.drawerContent.setFixedSize(640, 640)
-        # self.drawerContent.setStyleSheet("background-color: black; border: 0;") # Style moved to QSS
         self.drawerContent.setVisible(False)
-        # self.drawerContent.setContentsMargins(0, 0, 0, 0)
-
-        # rightLayout.addWidget(self.drawerContent)
 
         mainLayout.addWidget(self.drawerContent, alignment=Qt.AlignmentFlag.AlignTop)
 
-        # mainLayout.addWidget(rightPanel, alignment=Qt.AlignmentFlag.AlignTop)
-        mainLayout.addStretch()  # 保留顶部布局
+    def _connect_signals(self) -> None:
+        """Connects widget signals to slots."""
+        # Button signal
+        self.addButton.clicked.connect(self.add_drawer)
 
-        self.load_drawers()
+        # DrawerListWidget signals
+        self.drawerList.itemSelected.connect(self.update_drawer_content) # Connect to updated slot
+        self.drawerList.selectionCleared.connect(self.clear_drawer_content) # Connect to updated slot
+
+        # DragArea signal
+        self.dragArea.settingsRequested.connect(self.open_settings)
+
+        # DrawerContentWidget signal
+        self.drawerContent.closeRequested.connect(self.clear_drawer_content) # Connect close signal
+
+    # --- Public Methods and Slots ---
 
     def load_drawers(self) -> None:
         drawers = ConfigManager.load_config()
@@ -122,15 +131,55 @@ class MainWindow(QMainWindow):
             self.drawerList.addItem(item)
             self.save_drawers()
 
+    # Updated slot to handle locking logic
     def update_drawer_content(self, item: QListWidgetItem) -> None:
-        folder = item.data(USER_ROLE)
-        if isinstance(folder, str):
-            self.drawerContent.update_content(folder)
-            self.drawerContent.setVisible(True)
+        """Handles item selection and locking logic."""
+        if self.locked:
+            if item == self.lockedItem:
+                # Unlock if the locked item is clicked again
+                self.locked = False
+                self.lockedItem = None
+                # Optionally hide content when unlocking, or keep it visible
+                # self.drawerContent.setVisible(False) # Uncomment if desired
+                print("Drawer unlocked") # Debug print
+            else:
+                # If locked, but a different item is clicked, update content but stay locked
+                folder = item.data(USER_ROLE)
+                if isinstance(folder, str):
+                    self.drawerContent.update_content(folder)
+                    self.drawerContent.setVisible(True)
+                self.lockedItem = item # Update the locked item
+                print(f"Drawer remains locked, content updated to: {item.text()}") # Debug print
 
+        else:
+            # Lock and show content if not locked
+            self.locked = True
+            self.lockedItem = item
+            folder = item.data(USER_ROLE)
+            if isinstance(folder, str):
+                self.drawerContent.update_content(folder)
+                self.drawerContent.setVisible(True)
+            print(f"Drawer locked on: {item.text()}") # Debug print
+
+
+    # Updated slot to check lock state
     def clear_drawer_content(self) -> None:
-        # self.drawerContent.layout.clear()
-        self.drawerContent.setVisible(False)
+        """Clears the content view only if the list is not locked."""
+        if not self.locked:
+            # self.drawerContent.layout.clear() # Clearing layout might not be needed
+            self.drawerContent.setVisible(False)
+            print("Drawer content cleared (unlocked)") # Debug print
+        else:
+            # Also handle the case where the close button (X) is clicked while locked
+            # In this case, we should probably unlock and hide
+            if self.sender() == self.drawerContent: # Check if called by DrawerContent's closeRequested signal
+                 self.locked = False
+                 self.lockedItem = None
+                 self.drawerContent.setVisible(False)
+                 print("Drawer content cleared (closed while locked)") # Debug print
+            else:
+                 print("Drawer content not cleared (locked by list selection)") # Debug print
+
 
     def open_settings(self) -> None:
         dialog = QDialog(self)

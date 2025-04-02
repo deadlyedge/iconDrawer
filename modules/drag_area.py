@@ -4,12 +4,15 @@ from PySide6.QtWidgets import (
     QPushButton,
     QHBoxLayout,
 )
-from PySide6.QtCore import Qt, QPoint
+from PySide6.QtCore import Qt, QPoint, Signal # Import Signal
 from PySide6.QtGui import QIcon
 from typing import Optional
 
 
 class DragArea(QWidget):
+    # Define signal
+    settingsRequested = Signal()
+
     """
     一个用于拖拽窗口的区域，同时包含拖拽图标和设置图标。
     增强了高度和背景色，以提高可见性，并确保设置按钮可见。
@@ -48,11 +51,13 @@ class DragArea(QWidget):
         self.settingsButton.clicked.connect(self.on_settings_clicked)
 
     def on_settings_clicked(self) -> None:
-        main_window = self.window()
-        from modules.main_window import MainWindow
-
-        if isinstance(main_window, MainWindow):
-            main_window.open_settings()
+        # Emit signal instead of direct call
+        self.settingsRequested.emit()
+        # Remove direct call:
+        # main_window = self.window()
+        # from modules.main_window import MainWindow
+        # if isinstance(main_window, MainWindow):
+        #     main_window.open_settings()
 
     def mousePressEvent(self, event) -> None:
         if event.button() == Qt.MouseButton.LeftButton:

@@ -106,6 +106,15 @@ DrawerContentWidget QLabel {
 	color: #e0e0e0;
 }
 
+DrawerContentWidget QVBoxLayout {
+	background-color: #005fa3;
+	border-radius: 5px;
+}
+
+DrawerContentWidget QHBoxLayout {
+	background-color: transparent;
+}
+
 /* Style for ScrollArea and ScrollBar */
 QScrollArea {
 	border: none;

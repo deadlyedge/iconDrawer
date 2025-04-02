@@ -8,11 +8,12 @@ from PySide6.QtWidgets import (
     QSizePolicy,
     QMessageBox,
     QHBoxLayout,
-    QPushButton
+    QPushButton,
 )
 from PySide6.QtGui import QIcon, QDesktopServices
-from PySide6.QtCore import Qt, QSize, QUrl
+from PySide6.QtCore import Qt, QSize, QUrl, Signal
 from typing import Optional
+
 
 class FileIconWidget(QWidget):
     def __init__(self, file_path: str, parent: Optional[QWidget] = None) -> None:
@@ -24,29 +25,39 @@ class FileIconWidget(QWidget):
         QDesktopServices.openUrl(QUrl.fromLocalFile(self.file_path))
         super().mouseDoubleClickEvent(event)
 
+
 class DrawerContentWidget(QWidget):
+    closeRequested = Signal()  # 添加关闭请求信号
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         # 主布局，包含一个可滚动区域
         main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        self.setLayout(main_layout)
+
         # 添加右上角的关闭按钮
         header_layout = QHBoxLayout()
         header_layout.addStretch()
         header_layout.setContentsMargins(0, 0, 0, 0)
+
         close_button = QPushButton("X")
         close_button.setFixedSize(12, 12)
-        close_button.clicked.connect(self.close)
+        close_button.clicked.connect(self.closeRequested.emit)  # 连接到信号发射
+
         header_layout.addWidget(close_button)
-        main_layout.addLayout(header_layout)
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        main_layout.addWidget(self.scroll_area)
 
         # 创建滚动区域内部的部件和网格布局
         self.scroll_widget = QWidget()
         self.grid_layout = QGridLayout(self.scroll_widget)
         self.grid_layout.setSpacing(0)
         self.scroll_area.setWidget(self.scroll_widget)
+
+        main_layout.addLayout(header_layout)
+        main_layout.addWidget(self.scroll_area)
 
         self.icon_size = QSize(64, 64)  # 图标大小
         self.item_size = (80, 100)  # 每个文件项近似正方形的大小
@@ -64,28 +75,31 @@ class DrawerContentWidget(QWidget):
                         if icon.isNull():
                             icon = QIcon.fromTheme("text-x-generic")
                     else:
-                        icon = QIcon.fromTheme("folder")
-                    
+                        icon = QIcon("asset/folder_icon.png")
+
                     # 创建图标标签
                     icon_label = QLabel()
                     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    icon_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+                    icon_label.setSizePolicy(
+                        QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
+                    )
                     pixmap = icon.pixmap(self.icon_size)
                     icon_label.setPixmap(pixmap)
-                    
+
                     # 创建文本标签
                     text_label = QLabel(entry)
                     text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     text_label.setWordWrap(True)
-                    
+
                     # 使用 FileIconWidget 作为容器，设置固定近似正方形尺寸
                     container = FileIconWidget(full_path)
                     container.setFixedSize(self.item_size[0], self.item_size[1])
                     container_layout = QVBoxLayout(container)
+                    container_layout.setObjectName("file_container")
                     container_layout.setContentsMargins(5, 5, 5, 5)
                     container_layout.addWidget(icon_label)
                     container_layout.addWidget(text_label)
-                    
+
                     self.items.append(container)
                 self.relayout_grid()
             except OSError as e:
@@ -102,7 +116,9 @@ class DrawerContentWidget(QWidget):
                 widget.setParent(None)
         # 根据滚动区域内部部件的宽度计算每行可放置的列数
         available_width = self.scroll_widget.width() or self.width()
-        columns = max(1, available_width // (self.item_size[1] + self.grid_layout.spacing()))
+        columns = max(
+            1, available_width // (self.item_size[1] + self.grid_layout.spacing())
+        )
         row = 0
         col = 0
         for item in self.items:
