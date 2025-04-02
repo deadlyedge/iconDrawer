@@ -95,7 +95,6 @@ class DrawerContentWidget(QWidget):
                     container = FileIconWidget(full_path)
                     container.setFixedSize(self.item_size[0], self.item_size[1])
                     container_layout = QVBoxLayout(container)
-                    container_layout.setObjectName("file_container")
                     container_layout.setContentsMargins(5, 5, 5, 5)
                     container_layout.addWidget(icon_label)
                     container_layout.addWidget(text_label)
