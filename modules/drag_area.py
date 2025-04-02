@@ -18,7 +18,7 @@ class DragArea(QWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         # self.setFixedSize(200, 40)
-        self.setStyleSheet("background-color: rgba(0, 0, 0, 200);")
+        # self.setStyleSheet("background-color: rgba(0, 0, 0, 200);") # Style moved to QSS
         self._dragPos: Optional[QPoint] = None
 
         layout = QHBoxLayout(self)
@@ -27,7 +27,7 @@ class DragArea(QWidget):
 
         # 拖拽图标（汉堡图标），字号增大
         self.dragLabel = QLabel("☰", self)
-        self.dragLabel.setStyleSheet("font-size: 28px; color: white;")
+        # self.dragLabel.setStyleSheet("font-size: 28px; color: white;") # Style moved to QSS
         layout.addWidget(self.dragLabel)
 
         layout.addStretch()
@@ -40,9 +40,9 @@ class DragArea(QWidget):
         else:
             self.settingsButton.setIcon(settings_icon)
         self.settingsButton.setFixedSize(40, 40)
-        self.settingsButton.setStyleSheet(
-            "background-color: transparent; border: none; color: white;"
-        )
+        # self.settingsButton.setStyleSheet( # Style moved to QSS
+        #     "background-color: transparent; border: none; color: white;"
+        # )
         layout.addWidget(self.settingsButton)
 
         self.settingsButton.clicked.connect(self.on_settings_clicked)

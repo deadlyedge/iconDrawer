@@ -32,7 +32,7 @@ class MainWindow(QMainWindow):
 
         # 主区域：水平布局划分左右两部分
         centralWidget = QWidget()
-        centralWidget.setStyleSheet("background: transparent;")
+        # centralWidget.setStyleSheet("background: transparent;") # Style moved to QSS or handled by QMainWindow style
         self.setCentralWidget(centralWidget)
         mainLayout = QHBoxLayout(centralWidget)
         mainLayout.setContentsMargins(0, 0, 0, 0)
@@ -40,9 +40,10 @@ class MainWindow(QMainWindow):
 
         # 左侧面板：固定位置在窗口左侧偏上，包括dragarea和drawerlist及添加按钮
         leftPanel = QWidget()
+        leftPanel.setObjectName("leftPanel") # Set object name for QSS
         leftPanel.setFixedSize(210, 300)
         # leftPanel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        leftPanel.setStyleSheet("background: black;")
+        # leftPanel.setStyleSheet("background: black;") # Style moved to QSS
 
         leftLayout = QVBoxLayout(leftPanel)
         leftLayout.setContentsMargins(0, 0, 0, 0)
@@ -60,6 +61,7 @@ class MainWindow(QMainWindow):
 
         # 添加按钮，固定宽度
         self.addButton = QPushButton("添加抽屉", leftPanel)
+        self.addButton.setObjectName("addButton") # Set object name for QSS
         # self.addButton.setFixedWidth(210)
         leftLayout.addWidget(self.addButton)
         self.addButton.clicked.connect(self.add_drawer)
@@ -80,10 +82,11 @@ class MainWindow(QMainWindow):
         # rightLayout.setSpacing(0)
 
         self.drawerContent = DrawerContentWidget()
+        self.drawerContent.setObjectName("drawerContent") # Set object name for QSS
         self.drawerContent.setFixedSize(640, 640)
-        self.drawerContent.setStyleSheet("background-color: black; border: 0;")
+        # self.drawerContent.setStyleSheet("background-color: black; border: 0;") # Style moved to QSS
         self.drawerContent.setVisible(False)
-        self.drawerContent.setContentsMargins(0, 0, 0, 0)
+        # self.drawerContent.setContentsMargins(0, 0, 0, 0)
 
         # rightLayout.addWidget(self.drawerContent)
 

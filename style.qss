@@ -1,0 +1,186 @@
+/* Global settings */
+QWidget {
+	color: #e0e0e0; /* Light grey text */
+	background-color: transparent; /* Dark grey background */
+	font-size: 10pt;
+	border: none; /* Remove borders by default */
+}
+
+QMainWindow {
+	background-color: transparent; /* Keep main window transparent if needed */
+	border-radius: 5px;
+}
+
+/* Style for the main panels */
+#leftPanel {
+	/* Assuming you might set objectName="leftPanel" */
+	background-color: #1c1c1c; /* Slightly darker panel */
+	border-radius: 5px; /* Rounded corners */
+}
+
+#drawerContent {
+	/* Assuming objectName="drawerContent" */
+	background-color: #1c1c1c;
+	border-radius: 5px;
+	border: 1px solid #424242; /* Subtle border */
+}
+
+/* Style for the custom DragArea */
+DragArea {
+	background-color: rgba(0, 0, 0, 180); /* Semi-transparent black */
+	border-top-left-radius: 5px; /* Match panel rounding */
+	border-top-right-radius: 5px;
+}
+
+DragArea QLabel {
+	/* Hamburger icon */
+	background-color: transparent;
+	font-size: 20px; /* Adjusted size */
+	color: #bdbdbd; /* Lighter grey */
+	padding: 5px;
+}
+
+DragArea QPushButton {
+	/* Settings button */
+	background-color: transparent;
+	border: none;
+	color: #bdbdbd;
+	padding: 5px;
+}
+
+DragArea QPushButton:hover {
+	color: #ffffff; /* White on hover */
+	background-color: rgba(255, 255, 255, 30); /* Subtle highlight */
+	border-radius: 3px;
+}
+
+/* Style for the DrawerListWidget */
+DrawerListWidget {
+	background-color: #1c1c1c; /* Match panel */
+	border: none;
+	border-bottom-left-radius: 5px; /* Match panel rounding */
+	border-bottom-right-radius: 5px;
+}
+
+DrawerListWidget::item {
+	padding: 8px 12px; /* More padding */
+	color: #e0e0e0;
+	border-bottom: 1px solid #424242; /* Separator */
+}
+
+DrawerListWidget::item:selected {
+	background-color: #007acc; /* Blue selection color */
+	color: #ffffff;
+}
+
+DrawerListWidget::item:hover {
+	background-color: #4a4a4a; /* Grey hover */
+}
+
+/* Style for the Add Drawer Button */
+QPushButton#addButton {
+	/* Assuming objectName="addButton" */
+	background-color: #007acc;
+	color: #ffffff;
+	padding: 8px;
+	border-radius: 3px;
+	margin: 5px; /* Add some margin */
+}
+
+QPushButton#addButton:hover {
+	background-color: #005fa3; /* Darker blue on hover */
+}
+
+QPushButton#addButton:pressed {
+	background-color: #004c8c; /* Even darker when pressed */
+}
+
+/* Style for DrawerContentWidget items (basic) */
+DrawerContentWidget QWidget {
+	/* Target inner widgets, might need refinement */
+	background-color: #1c1c1c; /* Inherit panel background */
+}
+
+DrawerContentWidget QLabel {
+	background-color: transparent;
+	color: #e0e0e0;
+}
+
+/* Style for ScrollArea and ScrollBar */
+QScrollArea {
+	border: none;
+	background-color: transparent;
+}
+
+QScrollBar:vertical {
+	border: none;
+	background: #424242; /* Scrollbar track color */
+	width: 8px;
+	margin: 0px 0px 0px 0px;
+}
+
+QScrollBar::handle:vertical {
+	background: #888888; /* Scrollbar handle color */
+	min-height: 20px;
+	border-radius: 4px;
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+	border: none;
+	background: none;
+	height: 0px;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+	background: none;
+}
+
+/* Style for the close button in DrawerContentWidget */
+DrawerContentWidget QPushButton {
+	/* Might need objectName for specificity */
+	background-color: #555555;
+	color: #ffffff;
+	border-radius: 6px; /* Make it round */
+	font-weight: bold;
+	font-size: 8pt;
+	min-width: 12px; /* Ensure size */
+	min-height: 12px;
+	max-width: 12px;
+	max-height: 12px;
+	padding: 0px; /* Adjust padding if needed */
+}
+
+DrawerContentWidget QPushButton:hover {
+	background-color: #ff6666; /* Reddish on hover */
+}
+
+DrawerContentWidget QPushButton:pressed {
+	background-color: #cc0000; /* Darker red when pressed */
+}
+
+/* Style for Dialogs (basic) */
+QDialog {
+	background-color: #3c3c3c;
+}
+
+QDialog QLabel {
+	background-color: transparent;
+}
+
+QDialogButtonBox QPushButton {
+	background-color: #007acc;
+	color: #ffffff;
+	padding: 5px 15px;
+	border-radius: 3px;
+	min-width: 60px;
+}
+
+QDialogButtonBox QPushButton:hover {
+	background-color: #005fa3;
+}
+
+QDialogButtonBox QPushButton:pressed {
+	background-color: #004c8c;
+}
