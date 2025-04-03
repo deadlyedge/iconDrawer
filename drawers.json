@@ -4,29 +4,29 @@
       "name": ".venv",
       "path": "Z:\\CodeBase\\iconDrawer\\.venv",
       "size": {
-        "width": 305,
-        "height": 263
+        "width": 326,
+        "height": 259
       }
     },
     {
       "name": "3x",
       "path": "D:\\users\\Desktop\\3x",
       "size": {
-        "width": 730,
-        "height": 596
+        "width": 798,
+        "height": 599
       }
     },
     {
       "name": "__pycache__",
       "path": "Z:\\CodeBase\\iconDrawer\\.venv\\Lib\\site-packages\\shiboken6\\__pycache__",
       "size": {
-        "width": 418,
-        "height": 200
+        "width": 546,
+        "height": 413
       }
     }
   ],
   "window_position": {
-    "x": 1146,
-    "y": 232
+    "x": 460,
+    "y": 256
   }
 }
