@@ -9,11 +9,12 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QHBoxLayout,
     QPushButton,
-    QSizeGrip,
 )
 from PySide6.QtGui import QIcon, QDesktopServices, QFontMetrics, QResizeEvent, QMouseEvent
 from PySide6.QtCore import Qt, QSize, QUrl, Signal, QPoint
 from typing import Optional, Callable
+
+from .custom_size_grip import CustomSizeGrip
 
 
 class FileIconWidget(QWidget):
@@ -72,7 +73,7 @@ class DrawerContentWidget(QWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.current_folder = ""
-        self._is_resizing_with_grip: bool = False
+        # self._is_resizing_with_grip: bool = False # No longer needed
         self._init_main_container()
         self.icon_size = QSize(64, 64)
         self.item_size = (80, 100)
@@ -104,7 +105,9 @@ class DrawerContentWidget(QWidget):
         self.scroll_area.setWidget(self.scroll_widget)
         container_layout.addWidget(self.scroll_area, 1, 0)
 
-        self.size_grip = QSizeGrip(self.main_visual_container)
+        self.size_grip = CustomSizeGrip(self.main_visual_container)
+        # Connect the custom grip's signal to the widget's signal
+        self.size_grip.resizeFinished.connect(self.resizeFinished.emit)
         container_layout.addWidget(self.size_grip, 2, 0, Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
 
         container_layout.setRowStretch(0, 0)
@@ -288,24 +291,8 @@ class DrawerContentWidget(QWidget):
         self.scroll_widget.adjustSize()
         self.scroll_widget.updateGeometry()
 
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Detects mouse press on the size grip."""
-        if event.button() == Qt.MouseButton.LeftButton:
-            grip_rect = self.size_grip.geometry()
-            press_pos_in_container = self.main_visual_container.mapFrom(self, event.pos())
-            if grip_rect.contains(press_pos_in_container):
-                self._is_resizing_with_grip = True
-                print("[DEBUG content.py] Size grip pressed") # DEBUG
-        super().mousePressEvent(event)
-
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Detects mouse release after resizing with the grip."""
-        if event.button() == Qt.MouseButton.LeftButton and self._is_resizing_with_grip:
-            self._is_resizing_with_grip = False
-            print("[DEBUG content.py] Size grip released, emitting resizeFinished") # DEBUG
-            self.resizeFinished.emit()
-        super().mouseReleaseEvent(event)
-
+    # mousePressEvent and mouseReleaseEvent are no longer needed here,
+    # as the CustomSizeGrip handles its own mouse events.
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handles resize events, relayouts grid and emits sizeChanged signal."""
