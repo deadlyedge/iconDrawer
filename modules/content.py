@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
 )
-from PySide6.QtGui import QIcon, QDesktopServices
+from PySide6.QtGui import QIcon, QDesktopServices, QFontMetrics
 from PySide6.QtCore import Qt, QSize, QUrl, Signal
 from typing import Optional
 
@@ -54,7 +54,9 @@ class DrawerContentWidget(QWidget):
 
         # 创建主视觉容器
         self.main_visual_container = QWidget(self)
-        self.main_visual_container.setProperty("isDrawerContentContainer", True) # 设置自定义属性
+        self.main_visual_container.setProperty(
+            "isDrawerContentContainer", True
+        )  # 设置自定义属性
 
         # DrawerContentWidget 的主布局，只包含主视觉容器
         outer_layout = QVBoxLayout(self)
@@ -64,7 +66,7 @@ class DrawerContentWidget(QWidget):
 
         # 主视觉容器的内部布局
         container_layout = QVBoxLayout(self.main_visual_container)
-        container_layout.setContentsMargins(1, 1, 1, 1) # 添加细微边距以显示边框
+        container_layout.setContentsMargins(1, 1, 1, 1)  # 添加细微边距以显示边框
         container_layout.setSpacing(0)
         self.main_visual_container.setLayout(container_layout)
 
@@ -123,9 +125,44 @@ class DrawerContentWidget(QWidget):
                     )  # 确保图标标签背景透明
 
                     # 创建文本标签
-                    text_label = QLabel(entry)
+                    text_label = QLabel(
+                        entry
+                    )  # Initially set text to get font metrics correctly
                     text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    text_label.setWordWrap(True)
+                    text_label.setWordWrap(True)  # Enable word wrapping
+
+                    # --- Text Truncation Logic ---
+                    fm = QFontMetrics(text_label.font())
+                    # Use fixed item width and subtract visual container padding (2px left + 2px right)
+                    available_width = self.item_size[0] - 4
+                    if available_width <= 0:
+                        available_width = 50  # Fallback width
+
+                    avg_char_width = fm.averageCharWidth()
+                    if avg_char_width <= 0:
+                        avg_char_width = 6  # Fallback avg char width (adjust as needed)
+
+                    chars_per_line = max(1, available_width // avg_char_width)
+                    max_chars = chars_per_line * 2  # Estimate for 3 lines
+
+                    display_text = entry
+                    if len(entry) > max_chars:
+                        display_text = entry[: max_chars - 3] + "..."
+
+                    text_label.setText(display_text)  # Set potentially truncated text
+                    # --- End Truncation Logic ---
+
+                    # Calculate max height for 3 lines (visual fallback)
+                    line_height = fm.height()
+                    max_height = (
+                        line_height * 2 + fm.leading()
+                    )  # Add leading for better spacing estimate
+                    text_label.setMaximumHeight(max_height)
+
+                    # Set tooltip to show full name
+                    text_label.setToolTip(entry)
+
+                    # Set style after calculations
                     text_label.setStyleSheet(
                         "background-color: transparent;"
                     )  # 确保文本标签背景透明
