@@ -10,7 +10,13 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
 )
-from PySide6.QtGui import QIcon, QDesktopServices, QFontMetrics, QResizeEvent, QMouseEvent
+from PySide6.QtGui import (
+    QIcon,
+    QDesktopServices,
+    QFontMetrics,
+    QResizeEvent,
+    QMouseEvent,
+)
 from PySide6.QtCore import Qt, QSize, QUrl, Signal, QPoint
 from typing import Optional, Callable
 
@@ -21,6 +27,7 @@ class FileIconWidget(QWidget):
     """
     用于显示文件图标和文件名的部件
     """
+
     def __init__(self, file_path: str, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.file_path = file_path
@@ -61,11 +68,11 @@ class ClickableWidget(QWidget):
             super().mousePressEvent(event)
 
 
-
 class DrawerContentWidget(QWidget):
     """
     抽屉内容部件，用于展示文件夹内容和文件项
     """
+
     closeRequested = Signal()
     sizeChanged = Signal(QSize)
     resizeFinished = Signal()
@@ -108,7 +115,12 @@ class DrawerContentWidget(QWidget):
         self.size_grip = CustomSizeGrip(self.main_visual_container)
         # Connect the custom grip's signal to the widget's signal
         self.size_grip.resizeFinished.connect(self.resizeFinished.emit)
-        container_layout.addWidget(self.size_grip, 2, 0, Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
+        container_layout.addWidget(
+            self.size_grip,
+            2,
+            0,
+            Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight,
+        )
 
         container_layout.setRowStretch(0, 0)
         container_layout.setRowStretch(1, 1)
@@ -131,8 +143,8 @@ class DrawerContentWidget(QWidget):
         folder_icon_label.setPixmap(QIcon("asset/folder_icon.png").pixmap(16))
         folder_layout.addWidget(folder_icon_label)
 
-        self.folder_label = QLabel("folder_path", self.folder_container)
-        folder_layout.addWidget(self.folder_label)
+        self.folder_label = QLabel(folder_path, self.folder_container)
+        folder_layout.addWidget(self.folder_label, 1, Qt.AlignmentFlag.AlignLeft)
 
         self.folder_container.click_callback = self.open_current_folder
 
@@ -151,7 +163,9 @@ class DrawerContentWidget(QWidget):
         """
         self.current_folder = folder_path
         fm = QFontMetrics(self.folder_label.font())
-        elided_text = fm.elidedText(folder_path, Qt.TextElideMode.ElideLeft, self.folder_label.width() or 400)
+        elided_text = fm.elidedText(
+            folder_path, Qt.TextElideMode.ElideLeft, self.folder_label.width() or 400
+        )
         self.folder_label.setText(elided_text)
         self.folder_label.setToolTip(folder_path)
 
@@ -167,7 +181,9 @@ class DrawerContentWidget(QWidget):
                     #     continue
                     full_path = os.path.join(folder_path, entry.name)
                     icon = self._get_icon_for_path(full_path)
-                    container_widget = self._create_file_item(full_path, entry.name, icon)
+                    container_widget = self._create_file_item(
+                        full_path, entry.name, icon
+                    )
                     self.items.append(container_widget)
             self.relayout_grid()
         except OSError as e:
@@ -187,14 +203,26 @@ class DrawerContentWidget(QWidget):
         if os.path.isfile(full_path):
             icon = QIcon(full_path)
             if icon.isNull():
-                icon = QIcon.fromTheme("text-x-generic", QIcon(":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"))
+                icon = QIcon.fromTheme(
+                    "text-x-generic",
+                    QIcon(
+                        ":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"
+                    ),
+                )
         elif os.path.isdir(full_path):
-             icon = QIcon("asset/folder_icon.png")
+            icon = QIcon("asset/folder_icon.png")
         else:
-             icon = QIcon.fromTheme("unknown", QIcon(":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"))
+            icon = QIcon.fromTheme(
+                "unknown",
+                QIcon(
+                    ":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"
+                ),
+            )
         return icon
 
-    def _create_file_item(self, full_path: str, entry: str, icon: QIcon) -> FileIconWidget:
+    def _create_file_item(
+        self, full_path: str, entry: str, icon: QIcon
+    ) -> FileIconWidget:
         """
         创建显示单个文件项的部件
         """
@@ -202,8 +230,15 @@ class DrawerContentWidget(QWidget):
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         pixmap = icon.pixmap(self.icon_size)
-        if pixmap.width() > self.icon_size.width() or pixmap.height() > self.icon_size.height():
-             pixmap = pixmap.scaled(self.icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        if (
+            pixmap.width() > self.icon_size.width()
+            or pixmap.height() > self.icon_size.height()
+        ):
+            pixmap = pixmap.scaled(
+                self.icon_size,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
         icon_label.setPixmap(pixmap)
         icon_label.setStyleSheet("background-color: transparent;")
 
@@ -218,8 +253,12 @@ class DrawerContentWidget(QWidget):
 
         container_widget = FileIconWidget(full_path)
         container_widget.setFixedSize(self.item_size[0], self.item_size[1])
-        container_widget.content_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
-        container_widget.content_layout.addWidget(text_label, 0, Qt.AlignmentFlag.AlignCenter)
+        container_widget.content_layout.addWidget(
+            icon_label, 0, Qt.AlignmentFlag.AlignCenter
+        )
+        container_widget.content_layout.addWidget(
+            text_label, 0, Qt.AlignmentFlag.AlignCenter
+        )
         return container_widget
 
     def _truncate_text(self, text: str, label: QLabel) -> str:
@@ -232,22 +271,25 @@ class DrawerContentWidget(QWidget):
             available_width = 50
 
         avg_char_width = fm.averageCharWidth()
-        if avg_char_width <= 0: avg_char_width = 6
+        if avg_char_width <= 0:
+            avg_char_width = 6
         chars_per_line = max(1, available_width // avg_char_width)
 
         elided_line1 = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
-        if fm.boundingRect(elided_line1).width() <= available_width and '\n' not in elided_line1:
-             if elided_line1 == text:
-                 return text
+        if (
+            fm.boundingRect(elided_line1).width() <= available_width
+            and "\n" not in elided_line1
+        ):
+            if elided_line1 == text:
+                return text
 
         max_chars_two_lines = chars_per_line * 2
         if len(text) > max_chars_two_lines:
-            truncated_text = text[:max_chars_two_lines - 3] + "..."
+            truncated_text = text[: max_chars_two_lines - 3] + "..."
         else:
             truncated_text = text
 
         return truncated_text
-
 
     def relayout_grid(self) -> None:
         """
@@ -258,17 +300,22 @@ class DrawerContentWidget(QWidget):
             if item and item.widget():
                 item.widget().setParent(None)
 
-        if not self.items: return
+        if not self.items:
+            return
 
         viewport_width = self.scroll_area.viewport().width()
         available_width = viewport_width
 
-        if available_width <= 0: available_width = self.scroll_widget.width()
-        if available_width <= 0: available_width = self.width()
-        if available_width <= 0: available_width = self.item_size[0] * 3
+        if available_width <= 0:
+            available_width = self.scroll_widget.width()
+        if available_width <= 0:
+            available_width = self.width()
+        if available_width <= 0:
+            available_width = self.item_size[0] * 3
 
         item_total_width = self.item_size[0] + self.grid_layout.horizontalSpacing()
-        if item_total_width <= 0: item_total_width = self.item_size[0]
+        if item_total_width <= 0:
+            item_total_width = self.item_size[0]
 
         columns = max(1, int(available_width // item_total_width))
 
@@ -281,7 +328,9 @@ class DrawerContentWidget(QWidget):
                 row += 1
 
         rows_needed = (len(self.items) + columns - 1) // columns
-        min_height = rows_needed * (self.item_size[1] + self.grid_layout.verticalSpacing())
+        min_height = rows_needed * (
+            self.item_size[1] + self.grid_layout.verticalSpacing()
+        )
         min_height += self.grid_layout.verticalSpacing()
         self.scroll_widget.setMinimumHeight(min_height)
 
@@ -299,10 +348,11 @@ class DrawerContentWidget(QWidget):
         super().resizeEvent(event)
         self.relayout_grid()
         fm = QFontMetrics(self.folder_label.font())
-        elided_text = fm.elidedText(self.current_folder, Qt.TextElideMode.ElideLeft, self.folder_label.width())
+        elided_text = fm.elidedText(
+            self.current_folder, Qt.TextElideMode.ElideLeft, self.folder_label.width()
+        )
         self.folder_label.setText(elided_text)
         self.sizeChanged.emit(event.size())
-
 
     def clear_grid(self) -> None:
         """

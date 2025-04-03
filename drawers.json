@@ -12,21 +12,21 @@
       "name": "3x",
       "path": "D:\\users\\Desktop\\3x",
       "size": {
-        "width": 472,
-        "height": 349
+        "width": 730,
+        "height": 596
       }
     },
     {
       "name": "__pycache__",
       "path": "Z:\\CodeBase\\iconDrawer\\.venv\\Lib\\site-packages\\shiboken6\\__pycache__",
       "size": {
-        "width": 415,
-        "height": 273
+        "width": 418,
+        "height": 200
       }
     }
   ],
   "window_position": {
-    "x": 571,
-    "y": 348
+    "x": 1146,
+    "y": 232
   }
 }

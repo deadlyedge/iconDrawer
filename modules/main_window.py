@@ -118,6 +118,7 @@ class MainWindow(QMainWindow):
         # DrawerContentWidget signals
         self.drawerContent.closeRequested.connect(self.controller.handle_content_close_requested)
         self.drawerContent.resizeFinished.connect(self.controller.handle_content_resize_finished)
+        self.drawerContent.sizeChanged.connect(self._handle_content_size_changed) # Connect size changed signal
 
         # MainWindow signal
         self.windowMoved.connect(self.controller.update_window_position)
@@ -209,6 +210,23 @@ class MainWindow(QMainWindow):
         self.drawerList.clearSelection()
         # Optionally reset hover state if needed
         # self.drawerList.setCurrentItem(None)
+
+    def _handle_content_size_changed(self, new_content_size: QSize) -> None:
+        """Handles the sizeChanged signal from DrawerContentWidget."""
+        if not self.drawerContent.isVisible():
+            return # Don't resize if the content widget isn't visible
+
+        # Calculate required window size based on the new content size
+        required_window_width = self.leftPanel.width() + self.content_spacing + new_content_size.width()
+        required_window_height = max(self.leftPanel.height(), new_content_size.height())
+
+        # Resize the main window
+        # print(f"[DEBUG Main] Content resized to {new_content_size}, resizing window to {required_window_width}x{required_window_height}") # DEBUG
+        self.resize(required_window_width, required_window_height)
+
+        # Ensure content widget is still positioned correctly after potential window resize
+        # (might not be strictly necessary if layout handles it, but good for robustness)
+        self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
 
 
     # --- Event Overrides ---
