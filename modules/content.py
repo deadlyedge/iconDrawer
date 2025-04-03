@@ -9,9 +9,10 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QHBoxLayout,
     QPushButton,
+    QSizeGrip,
 )
-from PySide6.QtGui import QIcon, QDesktopServices, QFontMetrics
-from PySide6.QtCore import Qt, QSize, QUrl, Signal
+from PySide6.QtGui import QIcon, QDesktopServices, QFontMetrics, QResizeEvent, QMouseEvent
+from PySide6.QtCore import Qt, QSize, QUrl, Signal, QPoint
 from typing import Optional, Callable
 
 
@@ -23,16 +24,13 @@ class FileIconWidget(QWidget):
         super().__init__(parent)
         self.file_path = file_path
 
-        # 内部视觉容器，用于显示具体内容和悬停效果
         self.visual_container = QWidget(self)
         self.visual_container.setProperty("isVisualContainer", True)
 
-        # 主布局仅包含 visual_container
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.visual_container)
 
-        # visual_container 内部布局
         self.content_layout = QVBoxLayout(self.visual_container)
         self.content_layout.setContentsMargins(0, 5, 0, 5)
         self.content_layout.setSpacing(2)
@@ -47,35 +45,42 @@ class FileIconWidget(QWidget):
 
 class ClickableWidget(QWidget):
     """
-    可点击容器，支持设置点击回调
+    可点击容器，支持设置点击回调。
     """
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.click_callback: Optional[Callable[[], None]] = None
 
-    def mousePressEvent(self, event) -> None:
-        if self.click_callback:
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self.click_callback:
             self.click_callback()
-        super().mousePressEvent(event)
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
 
 
 class DrawerContentWidget(QWidget):
     """
     抽屉内容部件，用于展示文件夹内容和文件项
     """
-    closeRequested = Signal()  # 关闭请求信号
+    closeRequested = Signal()
+    sizeChanged = Signal(QSize)
+    resizeFinished = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.current_folder = ""
+        self._is_resizing_with_grip: bool = False
         self._init_main_container()
-        self.icon_size = QSize(64, 64)  # 图标大小
-        self.item_size = (80, 100)      # 文件项固定尺寸
-        self.items = []               # 存储所有文件项
+        self.icon_size = QSize(64, 64)
+        self.item_size = (80, 100)
+        self.items = []
 
     def _init_main_container(self) -> None:
         """
-        初始化主视觉容器，包括头部和滚动区域
+        初始化主视觉容器，包括头部、滚动区域和大小调整手柄
         """
         self.main_visual_container = QWidget(self)
         self.main_visual_container.setProperty("isDrawerContentContainer", True)
@@ -84,31 +89,35 @@ class DrawerContentWidget(QWidget):
         outer_layout.setContentsMargins(0, 0, 0, 0)
         outer_layout.addWidget(self.main_visual_container)
 
-        container_layout = QVBoxLayout(self.main_visual_container)
-        container_layout.setContentsMargins(1, 1, 1, 1)  # 显示边框的细微边距
+        container_layout = QGridLayout(self.main_visual_container)
+        container_layout.setContentsMargins(1, 1, 1, 1)
         container_layout.setSpacing(0)
 
-        # 添加头部（文件夹路径及关闭按钮）
         header_layout = self._create_header()
-        container_layout.addLayout(header_layout)
+        container_layout.addLayout(header_layout, 0, 0)
 
-        # 创建滚动区域并放置网格布局
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-
         self.scroll_widget = QWidget()
         self.grid_layout = QGridLayout(self.scroll_widget)
         self.grid_layout.setSpacing(5)
         self.scroll_area.setWidget(self.scroll_widget)
+        container_layout.addWidget(self.scroll_area, 1, 0)
 
-        container_layout.addWidget(self.scroll_area)
+        self.size_grip = QSizeGrip(self.main_visual_container)
+        container_layout.addWidget(self.size_grip, 2, 0, Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
+
+        container_layout.setRowStretch(0, 0)
+        container_layout.setRowStretch(1, 1)
+        container_layout.setRowStretch(2, 0)
+        container_layout.setColumnStretch(0, 1)
 
     def _create_header(self) -> QHBoxLayout:
         """
         创建头部布局，包含文件夹路径显示和关闭按钮
         """
         header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setContentsMargins(5, 2, 5, 2)
 
         self.folder_container = ClickableWidget(self)
         self.folder_container.setProperty("isFolderPathLayout", True)
@@ -116,7 +125,7 @@ class DrawerContentWidget(QWidget):
         folder_layout.setContentsMargins(0, 0, 0, 0)
 
         folder_icon_label = QLabel(self.folder_container)
-        folder_icon_label.setPixmap(QIcon("asset/folder_icon.png").pixmap(20))
+        folder_icon_label.setPixmap(QIcon("asset/folder_icon.png").pixmap(16))
         folder_layout.addWidget(folder_icon_label)
 
         self.folder_label = QLabel("folder_path", self.folder_container)
@@ -124,12 +133,12 @@ class DrawerContentWidget(QWidget):
 
         self.folder_container.click_callback = self.open_current_folder
 
-        header_layout.addWidget(self.folder_container, 0, Qt.AlignmentFlag.AlignLeft)
+        header_layout.addWidget(self.folder_container, 1)
 
         close_button = QPushButton("X")
-        close_button.setFixedSize(12, 12)
+        close_button.setObjectName("closeButton")
         close_button.clicked.connect(self.closeRequested.emit)
-        header_layout.addWidget(close_button, 0, Qt.AlignmentFlag.AlignRight)
+        header_layout.addWidget(close_button, 0)
 
         return header_layout
 
@@ -138,16 +147,21 @@ class DrawerContentWidget(QWidget):
         更新显示的文件夹路径及内容
         """
         self.current_folder = folder_path
-        self.folder_label.setText(folder_path)
+        fm = QFontMetrics(self.folder_label.font())
+        elided_text = fm.elidedText(folder_path, Qt.TextElideMode.ElideLeft, self.folder_label.width() or 400)
+        self.folder_label.setText(elided_text)
+        self.folder_label.setToolTip(folder_path)
+
         self.clear_grid()
         self.items.clear()
         if not os.path.isdir(folder_path):
             return
 
         try:
-            # 使用 os.scandir 优化遍历性能
             with os.scandir(folder_path) as entries:
                 for entry in entries:
+                    # if entry.name.startswith('.'):
+                    #     continue
                     full_path = os.path.join(folder_path, entry.name)
                     icon = self._get_icon_for_path(full_path)
                     container_widget = self._create_file_item(full_path, entry.name, icon)
@@ -170,32 +184,35 @@ class DrawerContentWidget(QWidget):
         if os.path.isfile(full_path):
             icon = QIcon(full_path)
             if icon.isNull():
-                icon = QIcon.fromTheme("text-x-generic")
+                icon = QIcon.fromTheme("text-x-generic", QIcon(":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"))
+        elif os.path.isdir(full_path):
+             icon = QIcon("asset/folder_icon.png")
         else:
-            icon = QIcon("asset/folder_icon.png")
+             icon = QIcon.fromTheme("unknown", QIcon(":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"))
         return icon
 
     def _create_file_item(self, full_path: str, entry: str, icon: QIcon) -> FileIconWidget:
         """
         创建显示单个文件项的部件
         """
-        # 图标标签
         icon_label = QLabel()
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         icon_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        icon_label.setPixmap(icon.pixmap(self.icon_size))
+        pixmap = icon.pixmap(self.icon_size)
+        if pixmap.width() > self.icon_size.width() or pixmap.height() > self.icon_size.height():
+             pixmap = pixmap.scaled(self.icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        icon_label.setPixmap(pixmap)
         icon_label.setStyleSheet("background-color: transparent;")
 
-        # 文本标签及截断处理
         text_label = QLabel(entry)
         text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         text_label.setWordWrap(True)
+        text_label.setMinimumWidth(self.item_size[0] - 10)
         display_text = self._truncate_text(entry, text_label)
         text_label.setText(display_text)
         text_label.setToolTip(entry)
         text_label.setStyleSheet("background-color: transparent;")
 
-        # 使用 FileIconWidget 容器显示图标与文本
         container_widget = FileIconWidget(full_path)
         container_widget.setFixedSize(self.item_size[0], self.item_size[1])
         container_widget.content_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
@@ -204,48 +221,107 @@ class DrawerContentWidget(QWidget):
 
     def _truncate_text(self, text: str, label: QLabel) -> str:
         """
-        根据空间大小截断文本以适应显示
+        根据空间大小截断文本以适应显示 (max 2 lines)
         """
         fm = QFontMetrics(label.font())
-        available_width = self.item_size[0] - 4  # 扣除左右边距
+        available_width = self.item_size[0] - 4
         if available_width <= 0:
-            available_width = 50  # 默认宽度
+            available_width = 50
 
-        avg_char_width = fm.averageCharWidth() or 6
+        avg_char_width = fm.averageCharWidth()
+        if avg_char_width <= 0: avg_char_width = 6
         chars_per_line = max(1, available_width // avg_char_width)
-        max_chars = chars_per_line * 2  # 预估显示两行文本
 
-        return text if len(text) <= max_chars else text[: max_chars - 3] + "..."
+        elided_line1 = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
+        if fm.boundingRect(elided_line1).width() <= available_width and '\n' not in elided_line1:
+             if elided_line1 == text:
+                 return text
+
+        max_chars_two_lines = chars_per_line * 2
+        if len(text) > max_chars_two_lines:
+            truncated_text = text[:max_chars_two_lines - 3] + "..."
+        else:
+            truncated_text = text
+
+        return truncated_text
+
 
     def relayout_grid(self) -> None:
         """
-        根据当前滚动区域宽度重新排版文件项
+        根据当前滚动区域视口（viewport）宽度重新排版文件项。
         """
         while self.grid_layout.count():
             item = self.grid_layout.takeAt(0)
-            if item.widget():
+            if item and item.widget():
                 item.widget().setParent(None)
 
-        available_width = self.scroll_widget.width() or self.width()
-        columns = max(1, available_width // (self.item_size[0] + self.grid_layout.spacing()))
+        if not self.items: return
+
+        viewport_width = self.scroll_area.viewport().width()
+        available_width = viewport_width
+
+        if available_width <= 0: available_width = self.scroll_widget.width()
+        if available_width <= 0: available_width = self.width()
+        if available_width <= 0: available_width = self.item_size[0] * 3
+
+        item_total_width = self.item_size[0] + self.grid_layout.horizontalSpacing()
+        if item_total_width <= 0: item_total_width = self.item_size[0]
+
+        columns = max(1, int(available_width // item_total_width))
+
         row, col = 0, 0
-        for item in self.items:
-            self.grid_layout.addWidget(item, row, col)
+        for item_widget in self.items:
+            self.grid_layout.addWidget(item_widget, row, col)
             col += 1
             if col >= columns:
                 col = 0
                 row += 1
 
-    def resizeEvent(self, event) -> None:
+        rows_needed = (len(self.items) + columns - 1) // columns
+        min_height = rows_needed * (self.item_size[1] + self.grid_layout.verticalSpacing())
+        min_height += self.grid_layout.verticalSpacing()
+        self.scroll_widget.setMinimumHeight(min_height)
+
+        self.scroll_widget.setMinimumHeight(min_height)
+
+        self.grid_layout.activate()
+        self.scroll_widget.adjustSize()
+        self.scroll_widget.updateGeometry()
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Detects mouse press on the size grip."""
+        if event.button() == Qt.MouseButton.LeftButton:
+            grip_rect = self.size_grip.geometry()
+            press_pos_in_container = self.main_visual_container.mapFrom(self, event.pos())
+            if grip_rect.contains(press_pos_in_container):
+                self._is_resizing_with_grip = True
+                print("[DEBUG content.py] Size grip pressed") # DEBUG
+        super().mousePressEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """Detects mouse release after resizing with the grip."""
+        if event.button() == Qt.MouseButton.LeftButton and self._is_resizing_with_grip:
+            self._is_resizing_with_grip = False
+            print("[DEBUG content.py] Size grip released, emitting resizeFinished") # DEBUG
+            self.resizeFinished.emit()
+        super().mouseReleaseEvent(event)
+
+
+    def resizeEvent(self, event: QResizeEvent) -> None:
+        """Handles resize events, relayouts grid and emits sizeChanged signal."""
         super().resizeEvent(event)
         self.relayout_grid()
+        fm = QFontMetrics(self.folder_label.font())
+        elided_text = fm.elidedText(self.current_folder, Qt.TextElideMode.ElideLeft, self.folder_label.width())
+        self.folder_label.setText(elided_text)
+        self.sizeChanged.emit(event.size())
+
 
     def clear_grid(self) -> None:
         """
         清空网格布局中的所有项
         """
-        for i in reversed(range(self.grid_layout.count())):
-            item = self.grid_layout.itemAt(i)
+        while self.grid_layout.count():
+            item = self.grid_layout.takeAt(0)
             if item and item.widget():
                 item.widget().deleteLater()
-                self.grid_layout.removeItem(item)

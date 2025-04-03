@@ -2,19 +2,31 @@
   "drawers": [
     {
       "name": ".venv",
-      "path": "Z:/CodeBase/iconDrawer/.venv"
+      "path": "Z:\\CodeBase\\iconDrawer\\.venv",
+      "size": {
+        "width": 442,
+        "height": 400
+      }
     },
     {
       "name": "3x",
-      "path": "D:/users/Desktop/3x"
+      "path": "D:\\users\\Desktop\\3x",
+      "size": {
+        "width": 442,
+        "height": 400
+      }
     },
     {
       "name": "__pycache__",
-      "path": "Z:/CodeBase/iconDrawer/.venv/Lib/site-packages/shiboken6/__pycache__"
+      "path": "Z:\\CodeBase\\iconDrawer\\.venv\\Lib\\site-packages\\shiboken6\\__pycache__",
+      "size": {
+        "width": 442,
+        "height": 200
+      }
     }
   ],
   "window_position": {
-    "x": 563,
-    "y": 230
+    "x": 724,
+    "y": 285
   }
 }
