@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QGridLayout,
     QLabel,
-    QSizePolicy,
+    QSizePolicy,  # Import QSizePolicy
     QMessageBox,
     QHBoxLayout,
     QPushButton,
@@ -16,11 +16,19 @@ from PySide6.QtGui import (
     QFontMetrics,
     QResizeEvent,
     QMouseEvent,
+    QPixmap,
+    QPaintEvent,  # Keep QPaintEvent import
 )
 from PySide6.QtCore import Qt, QSize, QUrl, Signal, QPoint
 from typing import Optional, Callable
 
+# Import refactored functions and necessary classes
 from .custom_size_grip import CustomSizeGrip
+from .icon_utils import get_icon_for_path
+
+# Remove content_utils import for label width calculation
+# from .content_utils import calculate_available_label_width
+from .content_utils import truncate_text  # Keep truncate_text for file names
 
 
 class FileIconWidget(QWidget):
@@ -43,7 +51,7 @@ class FileIconWidget(QWidget):
         self.content_layout.setContentsMargins(0, 5, 0, 5)
         self.content_layout.setSpacing(2)
 
-    def mouseDoubleClickEvent(self, event) -> None:
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         """
         双击打开文件或文件夹
         """
@@ -80,11 +88,25 @@ class DrawerContentWidget(QWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.current_folder = ""
-        # self._is_resizing_with_grip: bool = False # No longer needed
-        self._init_main_container()
-        self.icon_size = QSize(64, 64)
-        self.item_size = (80, 100)
+        # Initialize first
+        self.icon_size = QSize(96, 96)
+        self.item_size = (100, 120)
         self.items = []
+
+        # Explicitly initialize UI elements to None before creation
+        self.folder_label: Optional[QLabel] = None
+        self.folder_icon_label: Optional[QLabel] = None
+        self.close_button: Optional[QPushButton] = None
+        self.header_layout: Optional[QHBoxLayout] = None
+        self.main_visual_container: Optional[QWidget] = None
+        self.folder_container: Optional[ClickableWidget] = None
+        self.scroll_area: Optional[QScrollArea] = None
+        self.scroll_widget: Optional[QWidget] = None
+        self.grid_layout: Optional[QGridLayout] = None
+        self.size_grip: Optional[CustomSizeGrip] = None
+
+        # Now create the UI elements
+        self._init_main_container()
 
     def _init_main_container(self) -> None:
         """
@@ -113,7 +135,6 @@ class DrawerContentWidget(QWidget):
         container_layout.addWidget(self.scroll_area, 1, 0)
 
         self.size_grip = CustomSizeGrip(self.main_visual_container)
-        # Connect the custom grip's signal to the widget's signal
         self.size_grip.resizeFinished.connect(self.resizeFinished.emit)
         container_layout.addWidget(
             self.size_grip,
@@ -131,58 +152,94 @@ class DrawerContentWidget(QWidget):
         """
         创建头部布局，包含文件夹路径显示和关闭按钮
         """
-        header_layout = QHBoxLayout()
-        header_layout.setContentsMargins(5, 2, 5, 2)
+        self.header_layout = QHBoxLayout()
+        self.header_layout.setContentsMargins(5, 2, 5, 2)
 
+        # Restore ClickableWidget as folder_container
         self.folder_container = ClickableWidget(self)
         self.folder_container.setProperty("isFolderPathLayout", True)
+        self.folder_container.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )  # Container expands
         folder_layout = QHBoxLayout(self.folder_container)
         folder_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.folder_icon_label = QLabel(self.folder_container) # Store as instance variable
+        self.folder_icon_label = QLabel(self.folder_container)
         self.folder_icon_label.setPixmap(QIcon("asset/folder_icon.png").pixmap(16))
-        folder_layout.addWidget(self.folder_icon_label)
+        folder_layout.addWidget(self.folder_icon_label)  # Add to inner layout
 
-        self.folder_label = QLabel("", self.folder_container) # Initialize with empty string
-        folder_layout.addWidget(self.folder_label, 1, Qt.AlignmentFlag.AlignLeft)
+        self.folder_label = QLabel(
+            "", self.folder_container
+        )  # Initialize with empty string
+        # Use default size policy for label, let container handle expansion
+        folder_layout.addWidget(
+            self.folder_label, 1, Qt.AlignmentFlag.AlignLeft
+        )  # Add to inner layout with stretch
 
         self.folder_container.click_callback = self.open_current_folder
+        self.header_layout.addWidget(
+            self.folder_container, 1
+        )  # Add container with stretch
 
-        header_layout.addWidget(self.folder_container, 1)
-
-        self.close_button = QPushButton("X") # Store as instance variable
+        self.close_button = QPushButton("X")
         self.close_button.setObjectName("closeButton")
         self.close_button.clicked.connect(self.closeRequested.emit)
-        header_layout.addWidget(self.close_button, 0)
+        self.header_layout.addWidget(self.close_button, 0)  # Add button without stretch
 
-        self.header_layout = header_layout # Store layout
-        return header_layout
+        return self.header_layout
 
     def update_content(self, folder_path: str) -> None:
         """
         更新显示的文件夹路径及内容
         """
         self.current_folder = folder_path
-        self._update_folder_label_text() # Use helper method
-        self.folder_label.setToolTip(folder_path)
-
+        if self.folder_label:
+            self.folder_label.setText(folder_path)
+            self.folder_label.setToolTip(folder_path)
+        # Clear grid first
         self.clear_grid()
         self.items.clear()
         if not os.path.isdir(folder_path):
+            if self.folder_label:
+                self.folder_label.setText("")  # Clear label if path invalid
             return
 
         try:
             with os.scandir(folder_path) as entries:
                 for entry in entries:
-                    # if entry.name.startswith('.'):
-                    #     continue
                     full_path = os.path.join(folder_path, entry.name)
-                    icon = self._get_icon_for_path(full_path)
+                    icon = get_icon_for_path(full_path)
                     container_widget = self._create_file_item(
                         full_path, entry.name, icon
                     )
                     self.items.append(container_widget)
             self.relayout_grid()
+            # --- Direct Update Logic in update_content (using simple width) ---
+            if self.current_folder and self.folder_label:
+                try:
+                    # Use the label's own width for eliding (simpler approach)
+                    # Provide a fallback width if label width is 0 initially
+                    label_width = self.folder_label.width() if self.folder_label else 0
+                    # Use container width as a better fallback if label width is 0
+                    container_width = (
+                        self.folder_container.width() if self.folder_container else 0
+                    )
+                    available_width = (
+                        label_width or container_width or 200
+                    )  # Fallback chain
+                    fm = QFontMetrics(self.folder_label.font())
+                    elided_text = fm.elidedText(
+                        self.current_folder, Qt.TextElideMode.ElideLeft, available_width
+                    )
+                    print(
+                        f"[DEBUG UpdateContent] LabelW={label_width}, ContW={container_width}, AvailW={available_width}, Text='{elided_text}'"
+                    )  # DEBUG
+                    self.folder_label.setText(elided_text)
+                except Exception as e:
+                    print(f"Error updating folder label in update_content: {e}")
+                    if self.folder_label:
+                        self.folder_label.setText("...")
+            # --- End Direct Update Logic ---
         except OSError as e:
             QMessageBox.critical(self, "错误", f"读取文件夹内容时出错: {e!s}")
 
@@ -192,30 +249,6 @@ class DrawerContentWidget(QWidget):
         """
         if os.path.isdir(self.current_folder):
             QDesktopServices.openUrl(QUrl.fromLocalFile(self.current_folder))
-
-    def _get_icon_for_path(self, full_path: str) -> QIcon:
-        """
-        根据路径获取相应的图标
-        """
-        if os.path.isfile(full_path):
-            icon = QIcon(full_path)
-            if icon.isNull():
-                icon = QIcon.fromTheme(
-                    "text-x-generic",
-                    QIcon(
-                        ":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"
-                    ),
-                )
-        elif os.path.isdir(full_path):
-            icon = QIcon("asset/folder_icon.png")
-        else:
-            icon = QIcon.fromTheme(
-                "unknown",
-                QIcon(
-                    ":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png"
-                ),
-            )
-        return icon
 
     def _create_file_item(
         self, full_path: str, entry: str, icon: QIcon
@@ -242,8 +275,11 @@ class DrawerContentWidget(QWidget):
         text_label = QLabel(entry)
         text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         text_label.setWordWrap(True)
-        text_label.setMinimumWidth(self.item_size[0] - 10)
-        display_text = self._truncate_text(entry, text_label)
+        text_available_width = self.item_size[0] - 10
+        text_label.setMinimumWidth(text_available_width)
+        display_text = truncate_text(
+            entry, text_label, text_available_width
+        )  # Keep using util for item names
         text_label.setText(display_text)
         text_label.setToolTip(entry)
         text_label.setStyleSheet("background-color: transparent;")
@@ -258,40 +294,13 @@ class DrawerContentWidget(QWidget):
         )
         return container_widget
 
-    def _truncate_text(self, text: str, label: QLabel) -> str:
-        """
-        根据空间大小截断文本以适应显示 (max 2 lines)
-        """
-        fm = QFontMetrics(label.font())
-        available_width = self.item_size[0] - 4
-        if available_width <= 0:
-            available_width = 50
-
-        avg_char_width = fm.averageCharWidth()
-        if avg_char_width <= 0:
-            avg_char_width = 6
-        chars_per_line = max(1, available_width // avg_char_width)
-
-        elided_line1 = fm.elidedText(text, Qt.TextElideMode.ElideRight, available_width)
-        if (
-            fm.boundingRect(elided_line1).width() <= available_width
-            and "\n" not in elided_line1
-        ):
-            if elided_line1 == text:
-                return text
-
-        max_chars_two_lines = chars_per_line * 2
-        if len(text) > max_chars_two_lines:
-            truncated_text = text[: max_chars_two_lines - 3] + "..."
-        else:
-            truncated_text = text
-
-        return truncated_text
-
     def relayout_grid(self) -> None:
         """
         根据当前滚动区域视口（viewport）宽度重新排版文件项。
         """
+        # Add checks for None before accessing attributes/methods
+        if not self.grid_layout:
+            return
         while self.grid_layout.count():
             item = self.grid_layout.takeAt(0)
             if item and item.widget():
@@ -300,19 +309,23 @@ class DrawerContentWidget(QWidget):
         if not self.items:
             return
 
+        # Add checks for scroll_area and its viewport
+        if not self.scroll_area or not self.scroll_area.viewport():
+             return # Cannot determine viewport width
         viewport_width = self.scroll_area.viewport().width()
         available_width = viewport_width
 
-        if available_width <= 0:
+        # Add check for scroll_widget
+        if available_width <= 0 and self.scroll_widget:
             available_width = self.scroll_widget.width()
         if available_width <= 0:
             available_width = self.width()
         if available_width <= 0:
-            available_width = self.item_size[0] * 3
+            available_width = self.item_size[0] * 3  # Fallback
 
         item_total_width = self.item_size[0] + self.grid_layout.horizontalSpacing()
         if item_total_width <= 0:
-            item_total_width = self.item_size[0]
+            item_total_width = self.item_size[0]  # Fallback
 
         columns = max(1, int(available_width // item_total_width))
 
@@ -328,87 +341,57 @@ class DrawerContentWidget(QWidget):
         min_height = rows_needed * (
             self.item_size[1] + self.grid_layout.verticalSpacing()
         )
-        min_height += self.grid_layout.verticalSpacing()
-        self.scroll_widget.setMinimumHeight(min_height)
+        min_height += self.grid_layout.verticalSpacing()  # Add padding at the bottom
 
-        self.scroll_widget.setMinimumHeight(min_height)
-
-        self.grid_layout.activate()
-        self.scroll_widget.adjustSize()
-        self.scroll_widget.updateGeometry()
-
-    # mousePressEvent and mouseReleaseEvent are no longer needed here,
-    # as the CustomSizeGrip handles its own mouse events.
+        # Add check for scroll_widget before setting height
+        if self.scroll_widget:
+            self.scroll_widget.setMinimumHeight(min_height)
 
     def resizeEvent(self, event: QResizeEvent) -> None:
         """Handles resize events, relayouts grid and emits sizeChanged signal."""
         super().resizeEvent(event)
         self.relayout_grid()
-        self._update_folder_label_text() # Use helper method
+        # --- Direct Update Logic in resizeEvent (using simple width) ---
+        if self.current_folder and self.folder_label:
+            try:
+                # Use the label's own width for eliding (simpler approach)
+                label_width = self.folder_label.width() if self.folder_label else 0
+                container_width = (
+                    self.folder_container.width() if self.folder_container else 0
+                )
+                available_width = (
+                    label_width or container_width or 200
+                )  # Fallback chain
+                fm = QFontMetrics(self.folder_label.font())
+                elided_text = fm.elidedText(
+                    self.current_folder, Qt.TextElideMode.ElideLeft, available_width
+                )
+                print(
+                    f"[DEBUG ResizeEvent] LabelWidth={label_width}, ContW={container_width}, AvailW={available_width}, Text='{elided_text}'"
+                )  # DEBUG
+                self.folder_label.setText(elided_text)
+            except Exception as e:
+                print(f"Error updating folder label in resizeEvent: {e}")
+                if self.folder_label:
+                    self.folder_label.setText("...")
+        # --- End Direct Update Logic ---
         self.sizeChanged.emit(event.size())
 
     def clear_grid(self) -> None:
         """
         清空网格布局中的所有项
         """
+        # Add check for None before accessing attributes/methods
+        if not self.grid_layout:
+            return
         while self.grid_layout.count():
             item = self.grid_layout.takeAt(0)
             if item and item.widget():
                 item.widget().deleteLater()
 
-    def _calculate_available_label_width(self) -> int:
-        """Calculate the available width for the folder label in the header."""
-        if not hasattr(self, 'header_layout') or not hasattr(self, 'folder_icon_label') or not hasattr(self, 'close_button'):
-             # Widgets might not be fully initialized yet
-             return 100 # Return a default small width
+    def paintEvent(self, event: QPaintEvent) -> None:
+        """Overrides paintEvent. Label update is now handled directly."""
+        super().paintEvent(event)
+        # No label update logic needed here anymore
 
-        total_width = self.main_visual_container.width()
-        margins = self.header_layout.contentsMargins()
-        spacing = self.header_layout.spacing()
-
-        # Width occupied by other elements
-        icon_width = self.folder_icon_label.width()
-        button_width = self.close_button.width()
-
-        # Calculate available width
-        # Total width - left margin - right margin - icon width - spacing before label - spacing after label container - button width
-        # Note: folder_container stretches, so we subtract fixed elements and margins/spacing around it.
-        # The spacing inside folder_container (between icon and label) is handled by its own layout.
-        # We need the space allocated to folder_container first.
-        # A simpler approach might be: container width - margins - button width - spacing
-        container_width = self.folder_container.width()
-        folder_layout = self.folder_container.layout() # Get the layout
-
-        if not folder_layout:
-             # Layout not yet available, return default
-             # print("[DEBUG] Calc Width: Folder layout not found!")
-             return 100
-
-        folder_layout_margins = folder_layout.contentsMargins()
-        folder_layout_spacing = folder_layout.spacing()
-
-        available_width = (container_width -
-                           folder_layout_margins.left() -
-                           folder_layout_margins.right() -
-                           self.folder_icon_label.width() -
-                           folder_layout_spacing) # Space between icon and label
-
-        # Add a small buffer for safety
-        available_width -= 5
-
-        # print(f"[DEBUG] Calc Width: ContW={container_width}, IconW={self.folder_icon_label.width()}, Spacing={folder_layout_spacing}, Avail={available_width}")
-
-        return max(20, available_width) # Ensure a minimum width
-
-    def _update_folder_label_text(self) -> None:
-        """Updates the folder label text with elided version based on available width."""
-        if not self.current_folder or not hasattr(self, 'folder_label'):
-            return
-
-        available_width = self._calculate_available_label_width()
-        fm = QFontMetrics(self.folder_label.font())
-        elided_text = fm.elidedText(
-            self.current_folder, Qt.TextElideMode.ElideLeft, available_width
-        )
-        # print(f"[DEBUG] Update Label: AvailW={available_width}, Text='{elided_text}'") # DEBUG
-        self.folder_label.setText(elided_text)
+    # _update_folder_label removed, logic moved directly into update_content and resizeEvent
