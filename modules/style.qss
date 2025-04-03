@@ -18,9 +18,9 @@ QMainWindow {
 	border-radius: 5px; /* Rounded corners */
 }
 
-#drawerContent {
-	/* Assuming objectName="drawerContent" */
-	background-color: #1c1c1c;
+/* Style for the main visual container within DrawerContentWidget */
+QWidget[isDrawerContentContainer="true"] {
+	background-color: #1c1c1c; /* Match panel background */
 	border-radius: 5px;
 	border: 1px solid #424242; /* Subtle border */
 }
@@ -192,4 +192,15 @@ QDialogButtonBox QPushButton:hover {
 
 QDialogButtonBox QPushButton:pressed {
 	background-color: #004c8c;
+}
+
+/* Style for the visual container within FileIconWidget using custom property */
+QWidget[isVisualContainer="true"] {
+	background-color: transparent;
+	border-radius: 5px;
+	padding: 2px;
+}
+
+QWidget[isVisualContainer="true"]:hover {
+	background-color: rgba(230, 230, 230, 128); /* Semi-transparent light grey */
 }

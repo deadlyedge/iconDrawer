@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QIcon, QDesktopServices
 from PySide6.QtCore import Qt, QSize, QUrl, Signal
-# from PySide6.QtGui import QPalette, QColor # 不再需要 QPalette 和 QColor
 from typing import Optional
 
 
@@ -20,21 +19,12 @@ class FileIconWidget(QWidget):
     def __init__(self, file_path: str, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.file_path = file_path
-        # FileIconWidget 本身保持透明，只处理事件和布局
-        self.setStyleSheet("background-color: transparent;")
 
         # 创建内部视觉容器，用于显示内容和悬停效果
         self.visual_container = QWidget(self)
-        self.visual_container.setStyleSheet("""
-            QWidget { /* 应用于 visual_container */
-                background-color: transparent;
-                border-radius: 5px;
-                padding: 2px;
-            }
-            QWidget:hover {
-                background-color: rgba(230, 230, 230, 128); /* 半透明浅灰色 */
-            }
-        """)
+        self.visual_container.setProperty(
+            "isVisualContainer", True
+        )  # 设置自定义属性以便 QSS 选择
 
         # FileIconWidget 的主布局，只包含 visual_container
         main_container_layout = QVBoxLayout(self)
@@ -48,17 +38,10 @@ class FileIconWidget(QWidget):
         self.content_layout.setSpacing(2)
         self.visual_container.setLayout(self.content_layout)
 
-
     def mouseDoubleClickEvent(self, event):
         # 双击时打开文件或文件夹 (事件仍在 FileIconWidget 上捕获)
         QDesktopServices.openUrl(QUrl.fromLocalFile(self.file_path))
         super().mouseDoubleClickEvent(event)
-
-    # 不再需要 enterEvent 和 leaveEvent 来手动管理样式
-    # def enterEvent(self, event):
-    #     ...
-    # def leaveEvent(self, event):
-    #     ...
 
 
 class DrawerContentWidget(QWidget):
@@ -66,12 +49,26 @@ class DrawerContentWidget(QWidget):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
-        # 主布局，包含一个可滚动区域
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-        self.setLayout(main_layout)
+        # DrawerContentWidget 本身保持透明
+        # self.setStyleSheet("background-color: transparent;") # QSS 会处理
 
+        # 创建主视觉容器
+        self.main_visual_container = QWidget(self)
+        self.main_visual_container.setProperty("isDrawerContentContainer", True) # 设置自定义属性
+
+        # DrawerContentWidget 的主布局，只包含主视觉容器
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.addWidget(self.main_visual_container)
+        self.setLayout(outer_layout)
+
+        # 主视觉容器的内部布局
+        container_layout = QVBoxLayout(self.main_visual_container)
+        container_layout.setContentsMargins(1, 1, 1, 1) # 添加细微边距以显示边框
+        container_layout.setSpacing(0)
+        self.main_visual_container.setLayout(container_layout)
+
+        # --- 原有的内容现在添加到 container_layout ---
         # 添加右上角的关闭按钮
         header_layout = QHBoxLayout()
         header_layout.addStretch()
@@ -91,8 +88,9 @@ class DrawerContentWidget(QWidget):
         self.grid_layout.setSpacing(0)
         self.scroll_area.setWidget(self.scroll_widget)
 
-        main_layout.addLayout(header_layout)
-        main_layout.addWidget(self.scroll_area)
+        # 将 header 和 scroll_area 添加到 container_layout
+        container_layout.addLayout(header_layout)
+        container_layout.addWidget(self.scroll_area)
 
         self.icon_size = QSize(64, 64)  # 图标大小
         self.item_size = (80, 100)  # 每个文件项近似正方形的大小
@@ -120,13 +118,17 @@ class DrawerContentWidget(QWidget):
                     )
                     pixmap = icon.pixmap(self.icon_size)
                     icon_label.setPixmap(pixmap)
-                    icon_label.setStyleSheet("background-color: transparent;") # 确保图标标签背景透明
+                    icon_label.setStyleSheet(
+                        "background-color: transparent;"
+                    )  # 确保图标标签背景透明
 
                     # 创建文本标签
                     text_label = QLabel(entry)
                     text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     text_label.setWordWrap(True)
-                    text_label.setStyleSheet("background-color: transparent;") # 确保文本标签背景透明
+                    text_label.setStyleSheet(
+                        "background-color: transparent;"
+                    )  # 确保文本标签背景透明
 
                     # 使用 FileIconWidget 作为容器，设置固定近似正方形尺寸
                     # 创建 FileIconWidget 实例
@@ -134,10 +136,14 @@ class DrawerContentWidget(QWidget):
                     container_widget.setFixedSize(self.item_size[0], self.item_size[1])
 
                     # 将图标和文本添加到 container_widget 内部的 visual_container 的布局中
-                    container_widget.content_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter)
-                    container_widget.content_layout.addWidget(text_label, 0, Qt.AlignmentFlag.AlignCenter)
+                    container_widget.content_layout.addWidget(
+                        icon_label, 0, Qt.AlignmentFlag.AlignCenter
+                    )
+                    container_widget.content_layout.addWidget(
+                        text_label, 0, Qt.AlignmentFlag.AlignCenter
+                    )
 
-                    self.items.append(container_widget) # 添加到 items 列表
+                    self.items.append(container_widget)  # 添加到 items 列表
                 self.relayout_grid()
             except OSError as e:
                 QMessageBox.critical(self, "错误", f"读取文件夹内容时出错: {e}")
