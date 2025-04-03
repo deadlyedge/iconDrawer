@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import QIcon, QDesktopServices
 from PySide6.QtCore import Qt, QSize, QUrl, Signal
+# from PySide6.QtGui import QPalette, QColor # 不再需要 QPalette 和 QColor
 from typing import Optional
 
 
@@ -19,11 +20,41 @@ class FileIconWidget(QWidget):
     def __init__(self, file_path: str, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.file_path = file_path
+        # self.setAutoFillBackground(True) # 通过样式表控制背景，不再需要这个
+        # self.original_palette = self.palette() # 不再需要保存调色板
+        # 使用对象名选择器确保样式只应用于这个特定的 FileIconWidget 实例类型，并设置初始样式
+        self.setObjectName("fileIconWidget") # 设置对象名以便更精确地应用样式
+        self.setStyleSheet("""
+            #fileIconWidget {
+                background-color: transparent;
+                border-radius: 5px;
+            }
+        """)
 
     def mouseDoubleClickEvent(self, event):
         # 双击时打开文件或文件夹
         QDesktopServices.openUrl(QUrl.fromLocalFile(self.file_path))
         super().mouseDoubleClickEvent(event)
+
+    def enterEvent(self, event):
+        # 鼠标进入时改变背景色为半透明浅灰色
+        self.setStyleSheet("""
+            #fileIconWidget {
+                background-color: rgba(230, 230, 230, 128); /* 半透明浅灰色 */
+                border-radius: 5px;
+            }
+        """)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        # 鼠标离开时恢复透明背景
+        self.setStyleSheet("""
+            #fileIconWidget {
+                background-color: transparent;
+                border-radius: 5px;
+            }
+        """)
+        super().leaveEvent(event)
 
 
 class DrawerContentWidget(QWidget):
@@ -85,19 +116,22 @@ class DrawerContentWidget(QWidget):
                     )
                     pixmap = icon.pixmap(self.icon_size)
                     icon_label.setPixmap(pixmap)
+                    icon_label.setStyleSheet("background-color: transparent;") # 确保图标标签背景透明
 
                     # 创建文本标签
                     text_label = QLabel(entry)
                     text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     text_label.setWordWrap(True)
+                    text_label.setStyleSheet("background-color: transparent;") # 确保文本标签背景透明
 
                     # 使用 FileIconWidget 作为容器，设置固定近似正方形尺寸
                     container = FileIconWidget(full_path)
                     container.setFixedSize(self.item_size[0], self.item_size[1])
                     container_layout = QVBoxLayout(container)
-                    container_layout.setContentsMargins(5, 5, 5, 5)
-                    container_layout.addWidget(icon_label)
-                    container_layout.addWidget(text_label)
+                    container_layout.setContentsMargins(0, 5, 0, 5) # 左右边距设为0，上下保留一些边距
+                    container_layout.setSpacing(2) # 减小图标和文本之间的间距
+                    container_layout.addWidget(icon_label, 0, Qt.AlignmentFlag.AlignCenter) # 居中对齐图标
+                    container_layout.addWidget(text_label, 0, Qt.AlignmentFlag.AlignCenter) # 居中对齐文本
 
                     self.items.append(container)
                 self.relayout_grid()
