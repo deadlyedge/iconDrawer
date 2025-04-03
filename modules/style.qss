@@ -204,3 +204,7 @@ QWidget[isVisualContainer="true"] {
 QWidget[isVisualContainer="true"]:hover {
 	background-color: rgba(230, 230, 230, 128); /* Semi-transparent light grey */
 }
+
+QPushButton[isFolderPathButton="true"]{
+	border: none;
+}

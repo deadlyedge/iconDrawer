@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QPoint # Added QPoint
 from modules.config_manager import ConfigManager
 from modules.list import DrawerListWidget
 from modules.content import DrawerContentWidget
@@ -31,7 +31,9 @@ class MainWindow(QMainWindow):
         # Initialize state variables moved from DrawerListWidget
         self.locked: bool = False
         self.lockedItem: Optional[QListWidgetItem] = None
+        # self._initial_position_loaded flag removed
         self.load_drawers()
+        # self._initial_position_loaded = True removed
 
     def _setup_window_properties(self) -> None:
         """Sets the main window properties."""
@@ -98,16 +100,28 @@ class MainWindow(QMainWindow):
         self.drawerList.itemSelected.connect(self.update_drawer_content) # Connect to updated slot
         self.drawerList.selectionCleared.connect(self.clear_drawer_content) # Connect to updated slot
 
-        # DragArea signal
+        # DragArea signals
         self.dragArea.settingsRequested.connect(self.open_settings)
+        self.dragArea.dragFinished.connect(self.save_drawers) # Connect drag finished to save
 
         # DrawerContentWidget signal
         self.drawerContent.closeRequested.connect(self.clear_drawer_content) # Connect close signal
 
+    # --- Event Handlers ---
+
+    # moveEvent removed
+
     # --- Public Methods and Slots ---
 
     def load_drawers(self) -> None:
-        drawers = ConfigManager.load_config()
+        """Loads drawers and window position from config."""
+        drawers, window_position = ConfigManager.load_config() # Get position too
+        # Apply window position if available
+        if window_position:
+            self.move(window_position)
+
+        # Load drawer items
+        self.drawerList.clear() # Clear existing items before loading
         for drawer in drawers:
             name: str = drawer["name"]
             path: str = drawer["path"]
@@ -116,13 +130,22 @@ class MainWindow(QMainWindow):
             self.drawerList.addItem(item)
 
     def save_drawers(self) -> None:
+        """Saves drawers and the current window position to config."""
         drawers: List[Dict[str, str]] = []
         for i in range(self.drawerList.count()):
             item: QListWidgetItem = self.drawerList.item(i)
-            drawers.append({"name": item.text(), "path": item.data(USER_ROLE)})
-        ConfigManager.save_config(drawers)
+            # Ensure path is stored correctly
+            path_data = item.data(USER_ROLE)
+            if isinstance(path_data, str):
+                 drawers.append({"name": item.text(), "path": path_data})
+            else:
+                 print(f"警告：项目 '{item.text()}' 的路径数据无效，跳过保存。") # Warn if path is not a string
+
+        current_position: QPoint = self.pos() # Get current window position
+        ConfigManager.save_config(drawers, current_position) # Pass position to save_config
 
     def add_drawer(self) -> None:
+        """Adds a new drawer and saves the configuration."""
         folder = QFileDialog.getExistingDirectory(self, "选择文件夹")
         if folder:
             name = os.path.basename(folder)

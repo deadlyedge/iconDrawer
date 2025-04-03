@@ -7,6 +7,14 @@
     {
       "name": "3x",
       "path": "D:/users/Desktop/3x"
+    },
+    {
+      "name": "__pycache__",
+      "path": "Z:/CodeBase/iconDrawer/.venv/Lib/site-packages/shiboken6/__pycache__"
     }
-  ]
+  ],
+  "window_position": {
+    "x": 563,
+    "y": 230
+  }
 }

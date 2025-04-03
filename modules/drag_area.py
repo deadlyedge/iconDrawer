@@ -10,8 +10,9 @@ from typing import Optional
 
 
 class DragArea(QWidget):
-    # Define signal
+    # Define signals
     settingsRequested = Signal()
+    dragFinished = Signal() # New signal for drag completion
 
     """
     一个用于拖拽窗口的区域，同时包含拖拽图标和设置图标。
@@ -75,5 +76,9 @@ class DragArea(QWidget):
             event.accept()
 
     def mouseReleaseEvent(self, event) -> None:
+        # Check if a drag was actually in progress before releasing
+        was_dragging = self._dragPos is not None
         self._dragPos = None
+        if was_dragging and event.button() == Qt.MouseButton.LeftButton:
+            self.dragFinished.emit() # Emit signal on release after drag
         event.accept()
