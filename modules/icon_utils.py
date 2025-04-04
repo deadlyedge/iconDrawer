@@ -26,7 +26,7 @@ def _initialize_default_icons():
             QIcon(":/qt-project.org/styles/commonstyle/images/standardbutton-cancel-16.png")
         )
     if DEFAULT_FOLDER_ICON is None:
-        DEFAULT_FOLDER_ICON = QIcon("asset/folder_icon.png") # Ensure asset path is correct
+        DEFAULT_FOLDER_ICON = QIcon("asset/icons/folder_icon.png") # Ensure asset path is correct
     if DEFAULT_UNKNOWN_ICON is None:
         DEFAULT_UNKNOWN_ICON = QIcon.fromTheme(
             "unknown",

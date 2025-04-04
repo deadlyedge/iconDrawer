@@ -166,7 +166,7 @@ class DrawerContentWidget(QWidget):
         folder_layout.setContentsMargins(0, 0, 0, 0)
 
         self.folder_icon_label = QLabel(self.folder_container)
-        self.folder_icon_label.setPixmap(QIcon("asset/folder_icon.png").pixmap(16))
+        self.folder_icon_label.setPixmap(QIcon("asset/icons/folder_icon.png").pixmap(16))
         folder_layout.addWidget(self.folder_icon_label)  # Add to inner layout
 
         self.folder_label = QLabel(
