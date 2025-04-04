@@ -23,7 +23,7 @@ class DragArea(QWidget):
         layout.setContentsMargins(10, 0, 10, 0)
         layout.setSpacing(10)
 
-        self.dragLabel = QLabel("☰ 移动窗口", self)
+        self.dragLabel = QLabel("☰ 拖移窗口", self)
         layout.addWidget(self.dragLabel)
 
         layout.addStretch()

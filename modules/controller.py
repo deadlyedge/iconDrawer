@@ -1,7 +1,7 @@
 from typing import List, Optional, TYPE_CHECKING
 from PySide6.QtCore import QObject, QPoint, QSize
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox # Added QMessageBox
-from modules.config_manager import ConfigManager, DrawerDict
+from modules.settings_manager import SettingsManager, DrawerDict
 from pathlib import Path
 import logging # Import logging
 
@@ -34,7 +34,7 @@ class AppController(QObject):
 
     def _load_initial_data(self) -> None:
         """Loads initial configuration and updates the view."""
-        drawers, window_position = ConfigManager.load_config()
+        drawers, window_position = SettingsManager.load_settings()
         self._drawers_data = drawers
         self._window_position = window_position
         # logging.info(f"Loaded drawers data: {self._drawers_data}") # DEBUG removed
@@ -50,7 +50,7 @@ class AppController(QObject):
         if current_pos:
             self._window_position = current_pos
         # logging.info(f"Saving data: {self._drawers_data}") # DEBUG removed
-        ConfigManager.save_config(self._drawers_data, self._window_position)
+        SettingsManager.save_settings(self._drawers_data, self._window_position)
         logging.info("Configuration saved.") # Keep critical log
 
     # --- Drawer Operations ---

@@ -1,6 +1,6 @@
-from PySide6.QtWidgets import QWidget, QApplication
+from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, QPoint, Signal, QRect
-from PySide6.QtGui import QMouseEvent, QPaintEvent, QPainter, QColor, QCursor
+from PySide6.QtGui import QMouseEvent, QPaintEvent, QPainter, QColor
 
 
 class CustomSizeGrip(QWidget):

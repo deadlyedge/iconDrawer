@@ -16,10 +16,9 @@ from PySide6.QtGui import (
     QFontMetrics,
     QResizeEvent,
     QMouseEvent,
-    QPixmap,
     QPaintEvent,  # Keep QPaintEvent import
 )
-from PySide6.QtCore import Qt, QSize, QUrl, Signal, QPoint
+from PySide6.QtCore import Qt, QSize, QUrl, Signal
 from typing import Optional, Callable
 
 # Import refactored functions and necessary classes

@@ -16,7 +16,7 @@ from PySide6.QtCore import Qt, QPoint, QSize, Signal
 from PySide6.QtGui import QMoveEvent # Import QMoveEvent
 # Import AppController conditionally for type hinting if needed, or directly
 # from modules.controller import AppController # Direct import might cause issues if controller imports MainWindow
-from modules.config_manager import DrawerDict # Keep DrawerDict if used in view methods
+from modules.settings_manager import DrawerDict # Keep DrawerDict if used in view methods
 from modules.list import DrawerListWidget
 from modules.content import DrawerContentWidget
 from modules.drag_area import DragArea
