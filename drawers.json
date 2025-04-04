@@ -12,21 +12,21 @@
       "name": "3x",
       "path": "D:\\users\\Desktop\\3x",
       "size": {
-        "width": 737,
-        "height": 441
+        "width": 726,
+        "height": 437
       }
     },
     {
       "name": "DaVinci Resolve",
       "path": "C:\\Users\\xdrea\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Blackmagic Design\\DaVinci Resolve",
       "size": {
-        "width": 418,
-        "height": 234
+        "width": 382,
+        "height": 240
       }
     }
   ],
   "window_position": {
-    "x": 757,
-    "y": 525
+    "x": 723,
+    "y": 415
   }
 }

@@ -26,8 +26,7 @@ from typing import Optional, Callable
 from .custom_size_grip import CustomSizeGrip
 from .icon_utils import get_icon_for_path
 
-# Remove content_utils import for label width calculation
-# from .content_utils import calculate_available_label_width
+from .content_utils import calculate_available_label_width
 from .content_utils import truncate_text  # Keep truncate_text for file names
 
 
@@ -104,6 +103,8 @@ class DrawerContentWidget(QWidget):
         self.scroll_widget: Optional[QWidget] = None
         self.grid_layout: Optional[QGridLayout] = None
         self.size_grip: Optional[CustomSizeGrip] = None
+
+        # self.available_label_width = 200 # Removed: No longer storing stale width
 
         # Now create the UI elements
         self._init_main_container()
@@ -186,6 +187,10 @@ class DrawerContentWidget(QWidget):
         self.close_button.clicked.connect(self.closeRequested.emit)
         self.header_layout.addWidget(self.close_button, 0)  # Add button without stretch
 
+        # self.available_label_width = calculate_available_label_width(
+        #     self, self.header_layout, self.folder_icon_label, self.close_button
+        # ) # Removed: Calculation moved to _update_folder_label_elided_text
+
         return self.header_layout
 
     def update_content(self, folder_path: str) -> None:
@@ -214,32 +219,8 @@ class DrawerContentWidget(QWidget):
                     )
                     self.items.append(container_widget)
             self.relayout_grid()
-            # --- Direct Update Logic in update_content (using simple width) ---
-            if self.current_folder and self.folder_label:
-                try:
-                    # Use the label's own width for eliding (simpler approach)
-                    # Provide a fallback width if label width is 0 initially
-                    label_width = self.folder_label.width() if self.folder_label else 0
-                    # Use container width as a better fallback if label width is 0
-                    container_width = (
-                        self.folder_container.width() if self.folder_container else 0
-                    )
-                    available_width = (
-                        label_width or container_width or 200
-                    )  # Fallback chain
-                    fm = QFontMetrics(self.folder_label.font())
-                    elided_text = fm.elidedText(
-                        self.current_folder, Qt.TextElideMode.ElideLeft, available_width
-                    )
-                    print(
-                        f"[DEBUG UpdateContent] LabelW={label_width}, ContW={container_width}, AvailW={available_width}, Text='{elided_text}'"
-                    )  # DEBUG
-                    self.folder_label.setText(elided_text)
-                except Exception as e:
-                    print(f"Error updating folder label in update_content: {e}")
-                    if self.folder_label:
-                        self.folder_label.setText("...")
-            # --- End Direct Update Logic ---
+            # Update folder label using the new method
+            self._update_folder_label_elided_text()
         except OSError as e:
             QMessageBox.critical(self, "错误", f"读取文件夹内容时出错: {e!s}")
 
@@ -311,7 +292,7 @@ class DrawerContentWidget(QWidget):
 
         # Add checks for scroll_area and its viewport
         if not self.scroll_area or not self.scroll_area.viewport():
-             return # Cannot determine viewport width
+            return  # Cannot determine viewport width
         viewport_width = self.scroll_area.viewport().width()
         available_width = viewport_width
 
@@ -351,30 +332,8 @@ class DrawerContentWidget(QWidget):
         """Handles resize events, relayouts grid and emits sizeChanged signal."""
         super().resizeEvent(event)
         self.relayout_grid()
-        # --- Direct Update Logic in resizeEvent (using simple width) ---
-        if self.current_folder and self.folder_label:
-            try:
-                # Use the label's own width for eliding (simpler approach)
-                label_width = self.folder_label.width() if self.folder_label else 0
-                container_width = (
-                    self.folder_container.width() if self.folder_container else 0
-                )
-                available_width = (
-                    label_width or container_width or 200
-                )  # Fallback chain
-                fm = QFontMetrics(self.folder_label.font())
-                elided_text = fm.elidedText(
-                    self.current_folder, Qt.TextElideMode.ElideLeft, available_width
-                )
-                print(
-                    f"[DEBUG ResizeEvent] LabelWidth={label_width}, ContW={container_width}, AvailW={available_width}, Text='{elided_text}'"
-                )  # DEBUG
-                self.folder_label.setText(elided_text)
-            except Exception as e:
-                print(f"Error updating folder label in resizeEvent: {e}")
-                if self.folder_label:
-                    self.folder_label.setText("...")
-        # --- End Direct Update Logic ---
+        # Update folder label using the new method
+        self._update_folder_label_elided_text()
         self.sizeChanged.emit(event.size())
 
     def clear_grid(self) -> None:
@@ -394,4 +353,36 @@ class DrawerContentWidget(QWidget):
         super().paintEvent(event)
         # No label update logic needed here anymore
 
-    # _update_folder_label removed, logic moved directly into update_content and resizeEvent
+    def _update_folder_label_elided_text(self) -> None:
+        """
+        Calculates available width and updates the folder label with elided text.
+        """
+        if not self.current_folder or not self.folder_label or not self.header_layout or not self.folder_icon_label or not self.close_button:
+            # print("[DEBUG UpdateLabel] Missing widgets, skipping update.") # Optional debug
+            return
+
+        try:
+            # Calculate available width dynamically each time
+            available_width = calculate_available_label_width(
+                self, self.header_layout, self.folder_icon_label, self.close_button
+            )
+
+            fm = QFontMetrics(self.folder_label.font())
+            elided_text = fm.elidedText(
+                self.current_folder, Qt.TextElideMode.ElideLeft, available_width
+            )
+            # Use the original debug format for comparison
+            label_width = self.folder_label.width() # Current actual label width (might be small)
+            container_width = self.folder_container.width() if self.folder_container else 0 # Current container width
+            print(
+                f"[DEBUG _update_folder_label] LabelW={label_width}, ContW={container_width}, AvailW={available_width}, Text='{elided_text}'"
+            ) # DEBUG using calculated width
+            self.folder_label.setText(elided_text)
+            # Tooltip should always show the full path
+            self.folder_label.setToolTip(self.current_folder)
+
+        except Exception as e:
+            print(f"Error updating folder label text: {e}")
+            if self.folder_label:
+                self.folder_label.setText("...") # Fallback on error
+                self.folder_label.setToolTip(self.current_folder) # Still show tooltip
