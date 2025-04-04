@@ -24,8 +24,8 @@ from modules.drag_area import DragArea
 # Forward declare AppController for type hints if direct import is problematic
 if TYPE_CHECKING:
     from modules.controller import AppController
-
-USER_ROLE: int = 32
+# Import USER_ROLE from controller
+from modules.controller import USER_ROLE
 
 
 class MainWindow(QMainWindow):
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow):
 
 
         # 3. Resize and position content widget
-        print(f"[show_drawer_content] Resizing content widget to: {target_size}") # DEBUG
+        # print(f"[show_drawer_content] Resizing content widget to: {target_size}") # DEBUG
         self.drawerContent.resize(target_size)
         # Ensure positioning happens after potential window resize
         self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0) # Align top
@@ -198,7 +198,7 @@ class MainWindow(QMainWindow):
     def get_drawer_content_size(self) -> QSize:
         """Returns the current size of the drawer content widget."""
         current_size = self.drawerContent.size()
-        print(f"[get_drawer_content_size] Returning size: {current_size}") # DEBUG
+        # print(f"[get_drawer_content_size] Returning size: {current_size}") # DEBUG
         return current_size
 
     def get_current_position(self) -> QPoint:
@@ -221,7 +221,7 @@ class MainWindow(QMainWindow):
         required_window_height = max(self.leftPanel.height(), new_content_size.height())
 
         # Resize the main window
-        # print(f"[DEBUG Main] Content resized to {new_content_size}, resizing window to {required_window_width}x{required_window_height}") # DEBUG
+        # print(f"[DEBUG Main] Content resized to {new_content_size}, resizing window to {required_window_width}x{required_window_height}")
         self.resize(required_window_width, required_window_height)
 
         # Ensure content widget is still positioned correctly after potential window resize

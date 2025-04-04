@@ -358,7 +358,7 @@ class DrawerContentWidget(QWidget):
         Calculates available width and updates the folder label with elided text.
         """
         if not self.current_folder or not self.folder_label or not self.header_layout or not self.folder_icon_label or not self.close_button:
-            # print("[DEBUG UpdateLabel] Missing widgets, skipping update.") # Optional debug
+            # print("[DEBUG UpdateLabel] Missing widgets, skipping update.")
             return
 
         try:
@@ -372,17 +372,18 @@ class DrawerContentWidget(QWidget):
                 self.current_folder, Qt.TextElideMode.ElideLeft, available_width
             )
             # Use the original debug format for comparison
-            label_width = self.folder_label.width() # Current actual label width (might be small)
-            container_width = self.folder_container.width() if self.folder_container else 0 # Current container width
-            print(
-                f"[DEBUG _update_folder_label] LabelW={label_width}, ContW={container_width}, AvailW={available_width}, Text='{elided_text}'"
-            ) # DEBUG using calculated width
+            # label_width = self.folder_label.width() # Current actual label width (might be small)
+            # container_width = self.folder_container.width() if self.folder_container else 0 # Current container width
+            # print(
+            #     f"[DEBUG _update_folder_label] LabelW={label_width}, ContW={container_width}, AvailW={available_width}, Text='{elided_text}'"
+            # ) # DEBUG using calculated width
             self.folder_label.setText(elided_text)
             # Tooltip should always show the full path
             self.folder_label.setToolTip(self.current_folder)
 
         except Exception as e:
-            print(f"Error updating folder label text: {e}")
+            # Consider using logging
+            # print(f"Error updating folder label text: {e}")
             if self.folder_label:
                 self.folder_label.setText("...") # Fallback on error
                 self.folder_label.setToolTip(self.current_folder) # Still show tooltip

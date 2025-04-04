@@ -2,13 +2,14 @@ import os
 import sys
 from typing import Optional
 from PySide6.QtGui import QIcon, QPixmap
+import logging # Import logging
 
 # Import LnkParse3 safely
 try:
     import LnkParse3
     _HAS_LNKPARSE = True
 except ImportError:
-    print("Warning: LnkParse3 not found. .lnk file targets cannot be resolved.")
+    logging.warning("LnkParse3 not found. .lnk file targets cannot be resolved.")
     _HAS_LNKPARSE = False
 
 # Define default icons as None initially, create them lazily
@@ -43,7 +44,9 @@ def _try_get_icon(path: Optional[str]) -> Optional[QIcon]:
             # else:
                 # print(f"[DEBUG Icon Loader] QIcon is null for path: {path}")
         except Exception as e:
-            print(f"Error creating QIcon for path '{path}': {e}")
+            # Consider logging
+            # print(f"Error creating QIcon for path '{path}': {e}")
+            pass # Add pass to fix indentation error
     # else:
         # print(f"[DEBUG Icon Loader] Path invalid or does not exist: {path}")
     return None
@@ -82,7 +85,7 @@ def get_icon_for_path(full_path: str) -> QIcon:
                     if 'data' in json_data and isinstance(json_data['data'], dict):
                         icon_loc = json_data['data'].get('icon_location')
                         lnk_icon = _try_get_icon(icon_loc)
-                        if lnk_icon: print(f"[DEBUG LNK] Icon found via data.icon_location: {icon_loc}")
+                        # if lnk_icon: print(f"[DEBUG LNK] Icon found via data.icon_location: {icon_loc}")
 
                     # 2. If not found, try extra icon location block (expanding vars)
                     if not lnk_icon and 'extra' in json_data and isinstance(json_data['extra'], dict):
@@ -92,7 +95,7 @@ def get_icon_for_path(full_path: str) -> QIcon:
                              if isinstance(icon_loc_extra, str) and icon_loc_extra:
                                  expanded_path = os.path.expandvars(icon_loc_extra)
                                  lnk_icon = _try_get_icon(expanded_path)
-                                 if lnk_icon: print(f"[DEBUG LNK] Icon found via extra block: {expanded_path}")
+                                 # if lnk_icon: print(f"[DEBUG LNK] Icon found via extra block: {expanded_path}")
 
                     # 3. If still no icon, determine target path for fallback
                     if 'data' in json_data and isinstance(json_data['data'], dict):
@@ -108,11 +111,10 @@ def get_icon_for_path(full_path: str) -> QIcon:
                         elif isinstance(abs_path_cand, str) and abs_path_cand:
                              target_path = os.path.normpath(abs_path_cand)
 
-            except LnkParse3.errors.LnkParseError as parse_err:
-                print(f"Error parsing .lnk file '{full_path}' with LnkParse3: {parse_err}")
-            except Exception as e:
-                print(f"Error processing .lnk file '{full_path}': {e}")
-
+            # Use generic Exception as suggested, since LnkParseError might not be exposed
+            except Exception as parse_err:
+                # Consider logging, check if the error is relevant to LnkParse3 if needed
+                logging.error(f"Error parsing .lnk file '{full_path}' (potentially LnkParse3): {parse_err}")
             # 4. If we found an icon from location fields, use it
             if lnk_icon:
                 icon = lnk_icon
@@ -121,14 +123,14 @@ def get_icon_for_path(full_path: str) -> QIcon:
                 target_icon = _try_get_icon(target_path)
                 if target_icon:
                     icon = target_icon
-                    print(f"[DEBUG LNK] Icon found via target path fallback: {target_path}")
+                    # print(f"[DEBUG LNK] Icon found via target path fallback: {target_path}")
                 else:
                     icon = file_icon # Fallback if target exists but icon is null
-                    print(f"[DEBUG LNK] Icon location and target path ('{target_path}') failed. Using default.")
+                    # print(f"[DEBUG LNK] Icon location and target path ('{target_path}') failed. Using default.")
             # 6. If no icon location and no valid target path, use default
             else:
                 icon = file_icon
-                print(f"[DEBUG LNK] Could not determine icon location or target path for '{full_path}'. Using default.")
+                # print(f"[DEBUG LNK] Could not determine icon location or target path for '{full_path}'. Using default.")
 
         else:
             # Standard file handling for non-lnk files or non-windows

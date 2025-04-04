@@ -4,8 +4,8 @@
       "name": ".venv",
       "path": "Z:\\CodeBase\\iconDrawer\\.venv",
       "size": {
-        "width": 369,
-        "height": 309
+        "width": 691,
+        "height": 200
       }
     },
     {
@@ -20,13 +20,13 @@
       "name": "DaVinci Resolve",
       "path": "C:\\Users\\xdrea\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Blackmagic Design\\DaVinci Resolve",
       "size": {
-        "width": 382,
-        "height": 240
+        "width": 335,
+        "height": 207
       }
     }
   ],
   "window_position": {
-    "x": 789,
-    "y": 258
+    "x": 369,
+    "y": 267
   }
 }

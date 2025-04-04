@@ -4,6 +4,7 @@ from typing import List, Dict, Tuple, Optional, Any
 from pathlib import Path
 from PySide6.QtCore import QPoint, QSize
 from pydantic import BaseModel, ValidationError, Field, field_validator
+import logging # Import logging
 
 CONFIG_FILE: str = "drawers.json"
 
@@ -20,7 +21,7 @@ class DrawerModel(BaseModel):
     @field_validator('path')
     def path_must_exist(cls, v):
         if not v.exists():
-            print(f"Warning: Path does not exist during validation: {v}")
+            logging.warning(f"Path does not exist during validation: {v}")
         return v
 
 class WindowPositionModel(BaseModel):
@@ -52,7 +53,7 @@ class ConfigManager:
                 app_drawers: List[DrawerDict] = []
                 for drawer_model in config.drawers:
                     if not drawer_model.path.exists():
-                         print(f"Skipping drawer '{drawer_model.name}' as path no longer exists: {drawer_model.path}")
+                         logging.warning(f"Skipping drawer '{drawer_model.name}' as path no longer exists: {drawer_model.path}")
                          continue
 
                     drawer_dict: DrawerDict = {
@@ -70,7 +71,7 @@ class ConfigManager:
                 return app_drawers, app_window_position
 
             except (json.JSONDecodeError, ValidationError, OSError) as e:
-                print(f"Error loading or validating config: {e}")
+                logging.error(f"Error loading or validating config: {e}")
         return [], None
 
     @staticmethod
@@ -88,7 +89,7 @@ class ConfigManager:
             try:
                 path_obj = Path(drawer_dict["path"])
                 if not path_obj.exists():
-                     print(f"Warning: Path does not exist during save: {path_obj}")
+                     logging.warning(f"Path does not exist during save: {path_obj}")
                      # continue
 
                 drawer_models.append(
@@ -99,7 +100,7 @@ class ConfigManager:
                     )
                 )
             except Exception as e:
-                print(f"Skipping invalid drawer path during save: {drawer_dict.get('path', 'N/A')} - Error: {e}")
+                logging.error(f"Skipping invalid drawer path during save: {drawer_dict.get('path', 'N/A')} - Error: {e}")
 
 
         window_pos_model: Optional[WindowPositionModel] = None
@@ -114,4 +115,4 @@ class ConfigManager:
             with open(CONFIG_FILE, "w", encoding="utf-8") as f:
                 json.dump(data_to_save, f, indent=2, ensure_ascii=False)
         except OSError as e:
-            print(f"Error saving config: {e}")
+            logging.error(f"Error saving config: {e}")
