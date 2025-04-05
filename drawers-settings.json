@@ -12,8 +12,8 @@
       "name": "Netch",
       "path": "D:\\users\\Desktop\\Netch",
       "size": {
-        "width": 544,
-        "height": 379
+        "width": 512,
+        "height": 427
       }
     },
     {
@@ -26,7 +26,14 @@
     }
   ],
   "window_position": {
-    "x": 572,
-    "y": 319
-  }
+    "x": 525,
+    "y": 313
+  },
+  "background_color_hsla": [
+    0.807799442896936,
+    0.21,
+    0.44,
+    1.0
+  ],
+  "start_with_windows": false
 }

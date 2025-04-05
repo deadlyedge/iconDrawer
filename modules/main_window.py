@@ -13,16 +13,15 @@ from PySide6.QtWidgets import (
     QSystemTrayIcon,
     QMenu, # Already present
 )
-from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication # Add QCoreApplication for quit
-from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent # Add QCloseEvent
+from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication, Slot # Add QCoreApplication for quit, Slot
+from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent, QColor # Add QCloseEvent, QColor
 # Import QMoveEvent
 
-from modules.settings_manager import (
-    DrawerDict,
-)  # Keep DrawerDict if used in view methods
+from modules.settings_manager import SettingsManager, DrawerDict # Import SettingsManager
 from modules.list import DrawerListWidget
 from modules.content import DrawerContentWidget
 from modules.drag_area import DragArea
+from modules.settings_dialog import SettingsDialog # Import SettingsDialog
 
 # Forward declare AppController for type hints if direct import is problematic
 if TYPE_CHECKING:
@@ -59,13 +58,17 @@ class MainWindow(QMainWindow):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         self.setWindowFlag(Qt.WindowType.Tool, True)
+        # Set object name for styling
+        self.setObjectName("mainWindow") # Or set on centralWidget if preferred
 
     def _setup_ui(self) -> None:
         """Sets up the main UI layout and widgets."""
-        centralWidget = QWidget()
-        self.setCentralWidget(centralWidget)
+        # Use a different name to avoid conflict with the centralWidget() method
+        self._central_widget_container = QWidget()
+        self._central_widget_container.setObjectName("centralWidgetContainer") # Update object name too
+        self.setCentralWidget(self._central_widget_container)
 
-        mainLayout = QHBoxLayout(centralWidget)
+        mainLayout = QHBoxLayout(self._central_widget_container)
         mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.setSpacing(0)
 
@@ -99,7 +102,8 @@ class MainWindow(QMainWindow):
 
     def _setup_right_panel(self) -> None:
         """Creates and configures the right content panel, parented to central widget."""
-        self.drawerContent = DrawerContentWidget(self.centralWidget())
+        # Pass the renamed container widget as the parent
+        self.drawerContent = DrawerContentWidget(self._central_widget_container)
         self.drawerContent.setObjectName("drawerContent")
         self.drawerContent.setVisible(False)
         self.drawerContent.setMinimumSize(300, 200)
@@ -142,6 +146,9 @@ class MainWindow(QMainWindow):
 
         # MainWindow signal
         self.windowMoved.connect(self.controller.update_window_position)
+
+        # Apply initial background color (moved here after controller exists)
+        self.apply_initial_background()
 
     # --- Methods Called by Controller ---
 
@@ -243,6 +250,49 @@ class MainWindow(QMainWindow):
         # Optionally reset hover state if needed
         # self.drawerList.setCurrentItem(None)
 
+    @Slot(float, float, float, float)
+    def set_background_color(self, h: float, s: float, l: float, a: float) -> None:
+        """Applies the background color to leftPanel and drawerContent using HSLA values (0.0-1.0)."""
+        # Generate the HSLA color string
+        hsla_color = f"hsla({int(h * 359)}, {int(s * 100)}%, {int(l * 100)}%, {a:.2f})"
+
+        # Define the style for both widgets using their object names
+        # Apply border-radius for rounded corners if desired
+        style = f"""
+            QWidget#leftPanel {{
+                background-color: {hsla_color};
+                border-top-left-radius: 5px;
+                border-bottom-left-radius: 5px;
+                /* Add other specific styles for leftPanel if needed */
+            }}
+            /* Target the inner container of DrawerContentWidget using the custom property */
+            QWidget[isDrawerContentContainer="true"] {{
+                background-color: {hsla_color};
+                border-radius: 5px; /* Apply to all corners or specific ones */
+                /* Re-apply the border from style.qss to prevent it from being removed */
+                border: 1px solid #424242;
+            }}
+        """
+        # Apply the combined stylesheet to the main window.
+        # Qt will propagate the styles to the children based on the selectors.
+        self.setStyleSheet(style)
+        # Note: Applying directly to self.leftPanel.setStyleSheet and self.drawerContent.setStyleSheet
+        # might also work but applying to the parent is often preferred for managing styles.
+
+        # Optionally, still adjust the overall window opacity if alpha is meant to control that too.
+        # self.setWindowOpacity(a) # Uncomment if the whole window's opacity should change
+        # Update window opacity as well, if alpha is the main driver
+        # self.setWindowOpacity(a) # This affects the whole window including contents
+
+    def apply_initial_background(self) -> None:
+        """Loads initial background color from settings and applies it."""
+        if self.controller and self.controller.settings_manager:
+            h, s, l, a = self.controller.settings_manager.get_background_color_hsla()
+            self.set_background_color(h, s, l, a)
+        else:
+            print("Warning: Controller or SettingsManager not ready for initial background.")
+
+
     # --- Tray Icon Methods ---
 
     def _create_tray_icon(self) -> None:
@@ -339,15 +389,30 @@ class MainWindow(QMainWindow):
 
     # --- Settings Dialog ---
 
-    def show_settings_dialog(self) -> None:  # Renamed from open_settings
+    def show_settings_dialog(self) -> None:
         """Shows the settings dialog."""
-        # Keep the simple placeholder dialog for now
-        dialog = QDialog(self)
-        dialog.setWindowTitle("设置")
-        dialog_layout = QVBoxLayout(dialog)
-        label = QLabel("此处为设置窗口。", dialog)
-        dialog_layout.addWidget(label)
-        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok, parent=dialog)
-        button_box.accepted.connect(dialog.accept)
-        dialog_layout.addWidget(button_box)
+        if not self.controller or not self.controller.settings_manager:
+            print("Error: Controller or SettingsManager not available for settings dialog.")
+            return
+
+        dialog = SettingsDialog(self.controller.settings_manager, self)
+
+        # Connect signals from the dialog
+        # 1. Preview signal connected directly to main window's background setter
+        dialog.backgroundPreviewRequested.connect(self.set_background_color)
+        # 2. Apply/Save signals connected to controller's handlers
+        dialog.backgroundApplied.connect(self.controller.handle_background_applied)
+        dialog.startupToggled.connect(self.controller.handle_startup_toggled)
+
         dialog.exec()
+
+        # Disconnect signals after dialog is closed to avoid potential issues
+        # It's generally good practice, though might not be strictly necessary
+        # if the dialog is garbage collected properly.
+        try:
+            dialog.backgroundPreviewRequested.disconnect(self.set_background_color)
+            dialog.backgroundApplied.disconnect(self.controller.handle_background_applied)
+            dialog.startupToggled.disconnect(self.controller.handle_startup_toggled)
+        except RuntimeError:
+            # Signals might already be disconnected if dialog was closed abruptly
+            pass

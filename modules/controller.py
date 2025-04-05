@@ -1,5 +1,5 @@
-from typing import List, Optional, TYPE_CHECKING
-from PySide6.QtCore import QObject, QPoint, QSize
+from typing import List, Optional, TYPE_CHECKING, Tuple
+from PySide6.QtCore import QObject, QPoint, QSize, Slot # Import Slot
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox # Added QMessageBox
 from modules.settings_manager import SettingsManager, DrawerDict
 from pathlib import Path
@@ -23,8 +23,12 @@ class AppController(QObject):
     def __init__(self, main_view: 'MainWindow', parent: Optional[QObject] = None) -> None:
         super().__init__(parent)
         self._main_view = main_view
+        # Initialize SettingsManager instance for easier access
+        self.settings_manager = SettingsManager()
         self._drawers_data: List[DrawerDict] = []
         self._window_position: Optional[QPoint] = None
+        self._background_color_hsla: Tuple[float, float, float, float] = self.settings_manager.DEFAULT_BG_COLOR_HSLA
+        self._start_with_windows: bool = self.settings_manager.DEFAULT_START_WITH_WINDOWS
         self._locked: bool = False
         self._locked_item_data: Optional[DrawerDict] = None
 
@@ -34,14 +38,19 @@ class AppController(QObject):
 
     def _load_initial_data(self) -> None:
         """Loads initial settings and updates the view."""
-        drawers, window_position = SettingsManager.load_settings()
+        # Load all settings
+        drawers, window_pos, bg_color, start_flag = self.settings_manager.load_settings()
         self._drawers_data = drawers
-        self._window_position = window_position
-        # logging.info(f"Loaded drawers data: {self._drawers_data}") # DEBUG removed
+        self._window_position = window_pos
+        self._background_color_hsla = bg_color
+        self._start_with_windows = start_flag
+        # logging.info(f"Loaded initial settings: Pos={window_pos}, BG={bg_color}, Startup={start_flag}")
 
+        # Update view components
         self._main_view.populate_drawer_list(self._drawers_data)
         if self._window_position:
             self._main_view.set_initial_position(self._window_position)
+        # Initial background is applied by MainWindow itself after controller is ready
 
     def save_settings(self) -> None:
         """Saves the current application state (drawers and window position)."""
@@ -49,8 +58,13 @@ class AppController(QObject):
         current_pos = self._main_view.get_current_position()
         if current_pos:
             self._window_position = current_pos
-        # logging.info(f"Saving data: {self._drawers_data}") # DEBUG removed
-        SettingsManager.save_settings(self._drawers_data, self._window_position)
+        # logging.info(f"Saving data: Drawers={self._drawers_data}, Pos={self._window_position}, BG={self._background_color_hsla}, Startup={self._start_with_windows}")
+        self.settings_manager.save_settings(
+            drawers=self._drawers_data,
+            window_position=self._window_position,
+            background_color_hsla=self._background_color_hsla,
+            start_with_windows=self._start_with_windows
+        )
         logging.info("Settings saved.") # Keep critical log
 
     # --- Drawer Operations ---
@@ -244,3 +258,69 @@ class AppController(QObject):
     def handle_settings_requested(self) -> None:
         """Handles the request to open the settings dialog."""
         self._main_view.show_settings_dialog()
+
+    @Slot(float, float, float, float)
+    def handle_background_applied(self, h: float, s: float, l: float, a: float) -> None:
+        """Handles the final background color applied from settings dialog."""
+        new_color = (h, s, l, a)
+        if self._background_color_hsla != new_color:
+            self._background_color_hsla = new_color
+            self.save_settings() # Save all settings when background is confirmed
+            logging.info(f"Background color setting updated to: {new_color}")
+            # The main window background is already updated via the preview signal
+
+    @Slot(bool)
+    def handle_startup_toggled(self, enabled: bool) -> None:
+        """Handles the startup toggle from settings dialog."""
+        if self._start_with_windows != enabled:
+            self._start_with_windows = enabled
+            self.save_settings() # Save all settings when startup flag changes
+            logging.info(f"Start with Windows setting updated to: {enabled}")
+            # TODO: Implement the actual logic to add/remove from startup
+            # This usually involves platform-specific code (e.g., Windows Registry)
+            self._update_startup_registry(enabled) # Placeholder for registry logic
+
+    def _update_startup_registry(self, enable: bool) -> None:
+        """Placeholder for platform-specific startup logic (e.g., Windows Registry)."""
+        # This needs to be implemented based on the target OS.
+        # For Windows, it involves using the 'winreg' module.
+        # For macOS, it involves creating/deleting a .plist file in ~/Library/LaunchAgents.
+        # For Linux, it involves creating/deleting a .desktop file in ~/.config/autostart.
+        if enable:
+            logging.info("Placeholder: Adding application to system startup.")
+            # Example (Windows - requires 'pip install pywin32' potentially):
+            # try:
+            #     import winreg
+            #     import sys
+            #     key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+            #     app_name = "IconDrawer" # Or get from application info
+            #     app_path = sys.executable # Path to the python interpreter running the script
+            #     script_path = Path(__file__).resolve().parents[1] / "main.py" # Adjust path to your main script
+            #     command = f'"{app_path}" "{script_path}"'
+            #
+            #     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_WRITE) as key:
+            #         winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, command)
+            #     logging.info(f"Added '{app_name}' to startup registry.")
+            # except ImportError:
+            #     logging.error("Could not import winreg. Startup setting not applied (Windows). Install pywin32.")
+            # except Exception as e:
+            #     logging.error(f"Failed to add to startup registry: {e}")
+            pass
+        else:
+            logging.info("Placeholder: Removing application from system startup.")
+            # Example (Windows):
+            # try:
+            #     import winreg
+            #     key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
+            #     app_name = "IconDrawer"
+            #     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_WRITE) as key:
+            #         winreg.DeleteValue(key, app_name)
+            #     logging.info(f"Removed '{app_name}' from startup registry.")
+            # except FileNotFoundError:
+            #      logging.info(f"'{app_name}' not found in startup registry (already removed?).")
+            # except ImportError:
+            #     logging.error("Could not import winreg. Startup setting not applied (Windows). Install pywin32.")
+            # except Exception as e:
+            #     logging.error(f"Failed to remove from startup registry: {e}")
+            pass
+        # Add similar blocks for macOS and Linux if needed

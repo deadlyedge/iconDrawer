@@ -35,18 +35,28 @@ class WindowPositionModel(BaseModel):
 class SettingsModel(BaseModel):
     drawers: List[DrawerModel] = Field(default_factory=list)
     window_position: Optional[WindowPositionModel] = None
+    # Store HSLA as tuple of floats (0.0-1.0)
+    background_color_hsla: Optional[Tuple[float, float, float, float]] = Field(default=(0.0, 0.0, 0.1, 0.8)) # Default: dark grey, 80% alpha
+    start_with_windows: bool = False
 
 
 DrawerDict = Dict[str, Any]
 
 
 class SettingsManager:
+    # Default values if settings file is missing or invalid
+    DEFAULT_BG_COLOR_HSLA: Tuple[float, float, float, float] = (0.0, 0.0, 0.1, 0.8) # H, S, L, A (0.0-1.0)
+    DEFAULT_START_WITH_WINDOWS: bool = False
+
     @staticmethod
-    def load_settings() -> Tuple[List[DrawerDict], Optional[QPoint]]:
+    def load_settings() -> Tuple[List[DrawerDict], Optional[QPoint], Tuple[float, float, float, float], bool]:
         """
         Loads settings using Pydantic models for validation.
-        Returns a tuple containing a list of drawer dictionaries (compatible with application logic)
-        and an optional window position (QPoint).
+        Returns a tuple containing:
+        - List of drawer dictionaries
+        - Optional window position (QPoint)
+        - Background color HSLA tuple (float 0.0-1.0)
+        - Start with Windows flag (bool)
         """
         if os.path.exists(SETTINGS_FILE):
             try:
@@ -79,15 +89,27 @@ class SettingsManager:
                         settings.window_position.x, settings.window_position.y
                     )
 
-                return app_drawers, app_window_position
+                app_bg_color = settings.background_color_hsla or SettingsManager.DEFAULT_BG_COLOR_HSLA
+                app_start_with_windows = settings.start_with_windows
+
+                # Ensure HSLA tuple has 4 elements, pad if necessary (for older configs)
+                if len(app_bg_color) < 4:
+                    app_bg_color = tuple(list(app_bg_color) + [SettingsManager.DEFAULT_BG_COLOR_HSLA[3]])[:4]
+
+
+                return app_drawers, app_window_position, app_bg_color, app_start_with_windows
 
             except (json.JSONDecodeError, ValidationError, OSError) as e:
                 logging.error(f"Error loading or validating config: {e}")
-        return [], None
+        # Return defaults if file doesn't exist or loading failed
+        return [], None, SettingsManager.DEFAULT_BG_COLOR_HSLA, SettingsManager.DEFAULT_START_WITH_WINDOWS
 
     @staticmethod
     def save_settings(
-        drawers: List[DrawerDict], window_position: Optional[QPoint] = None
+        drawers: List[DrawerDict],
+        window_position: Optional[QPoint] = None,
+        background_color_hsla: Tuple[float, float, float, float] = DEFAULT_BG_COLOR_HSLA,
+        start_with_windows: bool = DEFAULT_START_WITH_WINDOWS
     ) -> None:
         """
         Saves settings using Pydantic models for serialization.
@@ -122,7 +144,10 @@ class SettingsManager:
             )
 
         config_to_save = SettingsModel(
-            drawers=drawer_models, window_position=window_pos_model
+            drawers=drawer_models,
+            window_position=window_pos_model,
+            background_color_hsla=background_color_hsla,
+            start_with_windows=start_with_windows
         )
 
         data_to_save = config_to_save.model_dump(mode="json", exclude_none=True)
@@ -132,3 +157,15 @@ class SettingsManager:
                 json.dump(data_to_save, f, indent=2, ensure_ascii=False)
         except OSError as e:
             logging.error(f"Error saving config: {e}")
+
+    @staticmethod
+    def get_background_color_hsla() -> Tuple[float, float, float, float]:
+        """Loads settings and returns only the background color HSLA tuple."""
+        _, _, bg_color, _ = SettingsManager.load_settings()
+        return bg_color
+
+    @staticmethod
+    def get_start_with_windows() -> bool:
+        """Loads settings and returns only the start with windows flag."""
+        _, _, _, start_flag = SettingsManager.load_settings()
+        return start_flag

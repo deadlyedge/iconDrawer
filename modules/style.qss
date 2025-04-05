@@ -14,13 +14,13 @@ QMainWindow {
 /* Style for the main panels */
 #leftPanel {
 	/* Assuming you might set objectName="leftPanel" */
-	background-color: #1c1c1c; /* Slightly darker panel */
+	/* background-color removed - will be set dynamically */
 	border-radius: 5px; /* Rounded corners */
 }
 
 /* Style for the main visual container within DrawerContentWidget */
 QWidget[isDrawerContentContainer="true"] {
-	background-color: #1c1c1c; /* Match panel background */
+	/* background-color removed - will be set dynamically */
 	border-radius: 5px;
 	border: 1px solid #424242; /* Subtle border */
 }
@@ -56,7 +56,7 @@ DragArea QPushButton:hover {
 
 /* Style for the DrawerListWidget */
 DrawerListWidget {
-	background-color: #1c1c1c; /* Match panel */
+	/* background-color: #1c1c1c; /* Removed - Should inherit from leftPanel */
 	border: none;
 	border-bottom-left-radius: 5px; /* Match panel rounding */
 	border-bottom-right-radius: 5px;
@@ -96,10 +96,10 @@ QPushButton#addButton:pressed {
 }
 
 /* Style for DrawerContentWidget items (basic) */
-DrawerContentWidget QWidget {
-	/* Target inner widgets, might need refinement */
-	background-color: #1c1c1c; /* Inherit panel background */
-}
+/* Removing the broad QWidget rule as it conflicts with container background */
+/* DrawerContentWidget QWidget { */
+	/* background-color: #1c1c1c; */
+/* } */
 
 DrawerContentWidget QLabel {
 	background-color: transparent;
