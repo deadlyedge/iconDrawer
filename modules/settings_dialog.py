@@ -58,7 +58,8 @@ class SettingsDialog(QDialog):
         # --- Background Group ---
         background_group = QGroupBox("背景颜色 (HSLA)")
         background_layout = QVBoxLayout()
-
+        background_layout.addSpacing(10)
+        
         form_layout = QFormLayout()
 
         # Hue Slider
@@ -105,6 +106,7 @@ class SettingsDialog(QDialog):
         self.color_preview.setMinimumSize(50, 30)
         self.color_preview.setAutoFillBackground(True) # Important for setting palette
         self.hsla_value_label = QLabel("hsla(0, 0%, 0%, 1.0)")
+        self.hsla_value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse | Qt.TextInteractionFlag.TextSelectableByKeyboard) # Make text selectable
         preview_layout.addWidget(QLabel("预览:"))
         preview_layout.addWidget(self.color_preview)
         preview_layout.addWidget(self.hsla_value_label)
@@ -113,14 +115,19 @@ class SettingsDialog(QDialog):
 
         background_group.setLayout(background_layout)
         main_layout.addWidget(background_group)
+        main_layout.addSpacing(10) # Add space below background group
 
         # --- Startup Group ---
         startup_group = QGroupBox("启动选项")
         startup_layout = QVBoxLayout()
+        startup_layout.addSpacing(10)
+        
         self.startup_checkbox = QCheckBox("开机时自动启动")
         startup_layout.addWidget(self.startup_checkbox)
         startup_group.setLayout(startup_layout)
         main_layout.addWidget(startup_group)
+        # Optionally add space below the last group if needed before buttons
+        # main_layout.addSpacing(10) 
 
         # --- Dialog Buttons ---
         self.button_box = QDialogButtonBox(

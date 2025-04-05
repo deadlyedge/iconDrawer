@@ -7,21 +7,18 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QPushButton,
     QFileDialog,
-    QLabel,
-    QDialog,
-    QDialogButtonBox,
     QSystemTrayIcon,
-    QMenu, # Already present
+    QMenu,
 )
-from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication, Slot # Add QCoreApplication for quit, Slot
-from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent, QColor # Add QCloseEvent, QColor
+from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication, Slot
+from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent
 # Import QMoveEvent
 
-from modules.settings_manager import SettingsManager, DrawerDict # Import SettingsManager
+from modules.settings_manager import DrawerDict  # Import SettingsManager
 from modules.list import DrawerListWidget
 from modules.content import DrawerContentWidget
 from modules.drag_area import DragArea
-from modules.settings_dialog import SettingsDialog # Import SettingsDialog
+from modules.settings_dialog import SettingsDialog  # Import SettingsDialog
 
 # Forward declare AppController for type hints if direct import is problematic
 if TYPE_CHECKING:
@@ -46,7 +43,7 @@ class MainWindow(QMainWindow):
 
         self.controller = AppController(self)
         self._connect_signals()
-        self._create_tray_icon() # Create tray icon and menu
+        self._create_tray_icon()  # Create tray icon and menu
 
         # Hide the window initially, show only the tray icon
         # self.hide() # Moved to main.py after controller setup potentially
@@ -54,18 +51,20 @@ class MainWindow(QMainWindow):
     def _setup_window_properties(self) -> None:
         """Sets the main window properties."""
         self.setWindowTitle("图标抽屉管理器")
-        self.setWindowOpacity(0.8)
+        # self.setWindowOpacity(0.8)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         self.setWindowFlag(Qt.WindowType.Tool, True)
         # Set object name for styling
-        self.setObjectName("mainWindow") # Or set on centralWidget if preferred
+        self.setObjectName("mainWindow")  # Or set on centralWidget if preferred
 
     def _setup_ui(self) -> None:
         """Sets up the main UI layout and widgets."""
         # Use a different name to avoid conflict with the centralWidget() method
         self._central_widget_container = QWidget()
-        self._central_widget_container.setObjectName("centralWidgetContainer") # Update object name too
+        self._central_widget_container.setObjectName(
+            "centralWidgetContainer"
+        )  # Update object name too
         self.setCentralWidget(self._central_widget_container)
 
         mainLayout = QHBoxLayout(self._central_widget_container)
@@ -290,15 +289,16 @@ class MainWindow(QMainWindow):
             h, s, l, a = self.controller.settings_manager.get_background_color_hsla()
             self.set_background_color(h, s, l, a)
         else:
-            print("Warning: Controller or SettingsManager not ready for initial background.")
-
+            print(
+                "Warning: Controller or SettingsManager not ready for initial background."
+            )
 
     # --- Tray Icon Methods ---
 
     def _create_tray_icon(self) -> None:
         """Creates the system tray icon and its context menu."""
         self.tray_icon = QSystemTrayIcon(self)
-        icon = QIcon("asset/drawer.icon@3x.png") # Consider making path configurable
+        icon = QIcon("asset/drawer.icon@3x.png")  # Consider making path configurable
         if icon.isNull():
             print("Warning: Tray icon file not found or invalid.")
             # Fallback icon or handle error
@@ -342,12 +342,12 @@ class MainWindow(QMainWindow):
             self.hide()
         else:
             self.show()
-            self.activateWindow() # Bring to front
-            self.raise_()         # Ensure it's on top
+            self.activateWindow()  # Bring to front
+            self.raise_()  # Ensure it's on top
 
     def _quit_application(self) -> None:
         """Cleans up and quits the application."""
-        self.tray_icon.hide() # Hide tray icon before quitting
+        self.tray_icon.hide()  # Hide tray icon before quitting
         # Add any other cleanup needed here (e.g., saving settings explicitly)
         QCoreApplication.quit()
 
@@ -392,7 +392,9 @@ class MainWindow(QMainWindow):
     def show_settings_dialog(self) -> None:
         """Shows the settings dialog."""
         if not self.controller or not self.controller.settings_manager:
-            print("Error: Controller or SettingsManager not available for settings dialog.")
+            print(
+                "Error: Controller or SettingsManager not available for settings dialog."
+            )
             return
 
         dialog = SettingsDialog(self.controller.settings_manager, self)
@@ -411,7 +413,9 @@ class MainWindow(QMainWindow):
         # if the dialog is garbage collected properly.
         try:
             dialog.backgroundPreviewRequested.disconnect(self.set_background_color)
-            dialog.backgroundApplied.disconnect(self.controller.handle_background_applied)
+            dialog.backgroundApplied.disconnect(
+                self.controller.handle_background_applied
+            )
             dialog.startupToggled.disconnect(self.controller.handle_startup_toggled)
         except RuntimeError:
             # Signals might already be disconnected if dialog was closed abruptly
