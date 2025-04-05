@@ -128,6 +128,9 @@ class DrawerContentWidget(QWidget):
 
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self.scroll_widget = QWidget()
         self.grid_layout = QGridLayout(self.scroll_widget)
         self.grid_layout.setSpacing(5)
@@ -165,7 +168,9 @@ class DrawerContentWidget(QWidget):
         folder_layout.setContentsMargins(0, 0, 0, 0)
 
         self.folder_icon_label = QLabel(self.folder_container)
-        self.folder_icon_label.setPixmap(QIcon("asset/icons/folder_icon.png").pixmap(16))
+        self.folder_icon_label.setPixmap(
+            QIcon("asset/icons/folder_icon.png").pixmap(16)
+        )
         folder_layout.addWidget(self.folder_icon_label)  # Add to inner layout
 
         self.folder_label = QLabel(
@@ -356,7 +361,13 @@ class DrawerContentWidget(QWidget):
         """
         Calculates available width and updates the folder label with elided text.
         """
-        if not self.current_folder or not self.folder_label or not self.header_layout or not self.folder_icon_label or not self.close_button:
+        if (
+            not self.current_folder
+            or not self.folder_label
+            or not self.header_layout
+            or not self.folder_icon_label
+            or not self.close_button
+        ):
             # print("[DEBUG UpdateLabel] Missing widgets, skipping update.")
             return
 
@@ -384,5 +395,5 @@ class DrawerContentWidget(QWidget):
             # Consider using logging
             # print(f"Error updating folder label text: {e}")
             if self.folder_label:
-                self.folder_label.setText("...") # Fallback on error
-                self.folder_label.setToolTip(self.current_folder) # Still show tooltip
+                self.folder_label.setText("...")  # Fallback on error
+                self.folder_label.setToolTip(self.current_folder)  # Still show tooltip

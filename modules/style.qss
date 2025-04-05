@@ -35,7 +35,7 @@ DragArea {
 DragArea QLabel {
 	/* Hamburger icon */
 	background-color: transparent;
-	font-size: 20px; /* Adjusted size */
+	font-size: 12px; /* Adjusted size */
 	color: #bdbdbd; /* Lighter grey */
 	padding: 5px;
 }

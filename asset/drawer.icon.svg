@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 184 184">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #bee0e9;
+        opacity: .7;
+      }
+
+      .cls-2 {
+        fill: #f7f8f8;
+      }
+
+      .cls-3 {
+        fill: #4587b8;
+      }
+
+      .cls-4 {
+        fill: #231815;
+        opacity: .2;
+      }
+    </style>
+  </defs>
+  <g id="_图层_1" data-name="图层 1">
+    <rect class="cls-3" width="184" height="184"/>
+    <rect class="cls-4" x="-2.09" y="-120.68" width="234.37" height="234.37" rx="11.76" ry="11.76" transform="translate(43.3 86.53) rotate(-49.69)"/>
+    <rect class="cls-2" x="30.04" y="57.42" width="42.19" height="15" rx="7.5" ry="7.5" transform="translate(54.14 -17.66) rotate(40.31)"/>
+  </g>
+  <g id="_图层_2" data-name="图层 2">
+    <rect class="cls-1" x="-3.09" y="-122.68" width="234.37" height="234.37" rx="11.76" ry="11.76" transform="translate(44.47 85.06) rotate(-49.69)"/>
+  </g>
+</svg>

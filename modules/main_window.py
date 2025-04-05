@@ -10,11 +10,16 @@ from PySide6.QtWidgets import (
     QLabel,
     QDialog,
     QDialogButtonBox,
+    QSystemTrayIcon,
+    QMenu, # Already present
 )
-from PySide6.QtCore import Qt, QPoint, QSize, Signal
-from PySide6.QtGui import QMoveEvent # Import QMoveEvent
+from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication # Add QCoreApplication for quit
+from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent # Add QCloseEvent
+# Import QMoveEvent
 
-from modules.settings_manager import DrawerDict # Keep DrawerDict if used in view methods
+from modules.settings_manager import (
+    DrawerDict,
+)  # Keep DrawerDict if used in view methods
 from modules.list import DrawerListWidget
 from modules.content import DrawerContentWidget
 from modules.drag_area import DragArea
@@ -33,15 +38,19 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         # Controller instance will be created after UI setup
-        self.controller: Optional['AppController'] = None
+        self.controller: Optional["AppController"] = None
         self._setup_window_properties()
         self._setup_ui()
         # Create controller *after* UI elements exist
         # Import locally to prevent circular import issues at module level
         from modules.controller import AppController
+
         self.controller = AppController(self)
         self._connect_signals()
-        # Initial data loading is now handled by the controller's __init__
+        self._create_tray_icon() # Create tray icon and menu
+
+        # Hide the window initially, show only the tray icon
+        # self.hide() # Moved to main.py after controller setup potentially
 
     def _setup_window_properties(self) -> None:
         """Sets the main window properties."""
@@ -107,20 +116,31 @@ class MainWindow(QMainWindow):
 
         # DrawerListWidget signals
         self.drawerList.itemSelected.connect(self.controller.handle_item_selected)
-        self.drawerList.selectionCleared.connect(self.controller.handle_selection_cleared)
+        self.drawerList.selectionCleared.connect(
+            self.controller.handle_selection_cleared
+        )
 
         # DragArea signals
-        self.dragArea.settingsRequested.connect(self.controller.handle_settings_requested)
-        self.dragArea.dragFinished.connect(self.controller.handle_window_drag_finished) # Connect drag finished
+        self.dragArea.settingsRequested.connect(
+            self.controller.handle_settings_requested
+        )
+        self.dragArea.dragFinished.connect(
+            self.controller.handle_window_drag_finished
+        )  # Connect drag finished
 
         # DrawerContentWidget signals
-        self.drawerContent.closeRequested.connect(self.controller.handle_content_close_requested)
-        self.drawerContent.resizeFinished.connect(self.controller.handle_content_resize_finished)
-        self.drawerContent.sizeChanged.connect(self._handle_content_size_changed) # Connect size changed signal
+        self.drawerContent.closeRequested.connect(
+            self.controller.handle_content_close_requested
+        )
+        self.drawerContent.resizeFinished.connect(
+            self.controller.handle_content_resize_finished
+        )
+        self.drawerContent.sizeChanged.connect(
+            self._handle_content_size_changed
+        )  # Connect size changed signal
 
         # MainWindow signal
         self.windowMoved.connect(self.controller.update_window_position)
-
 
     # --- Methods Called by Controller ---
 
@@ -128,9 +148,9 @@ class MainWindow(QMainWindow):
         """Clears and populates the drawer list view with data from the controller."""
         self.drawerList.clear()
         for drawer_data in drawers:
-            name = drawer_data.get("name", "Unnamed Drawer") # Provide default name
+            name = drawer_data.get("name", "Unnamed Drawer")  # Provide default name
             item = QListWidgetItem(name)
-            item.setData(USER_ROLE, drawer_data) # Store the whole dict
+            item.setData(USER_ROLE, drawer_data)  # Store the whole dict
             self.drawerList.addItem(item)
 
     def add_drawer_item(self, drawer: DrawerDict) -> None:
@@ -148,36 +168,47 @@ class MainWindow(QMainWindow):
         """Adjusts window size, positions, updates, and shows the content widget."""
         folder_path = drawer_data.get("path")
         if not folder_path:
-            print(f"Error: Cannot show content for drawer '{drawer_data.get('name')}' - path missing.")
+            print(
+                f"Error: Cannot show content for drawer '{drawer_data.get('name')}' - path missing."
+            )
             return
 
         # 1. Calculate required window size
-        required_window_width = self.leftPanel.width() + self.content_spacing + target_size.width()
+        required_window_width = (
+            self.leftPanel.width() + self.content_spacing + target_size.width()
+        )
         required_window_height = max(self.leftPanel.height(), target_size.height())
 
         # 2. Resize main window first
         # Check if current size is already sufficient to avoid unnecessary shrinking/growing flicker
         current_geom = self.geometry()
-        if current_geom.width() < required_window_width or current_geom.height() < required_window_height:
-             self.resize(required_window_width, required_window_height)
+        if (
+            current_geom.width() < required_window_width
+            or current_geom.height() < required_window_height
+        ):
+            self.resize(required_window_width, required_window_height)
         # If window is larger, we might want to keep it larger or shrink it.
         # For now, let's resize precisely. Consider adding logic if needed.
-        elif current_geom.width() > required_window_width or current_geom.height() > required_window_height:
-             self.resize(required_window_width, required_window_height)
-
+        elif (
+            current_geom.width() > required_window_width
+            or current_geom.height() > required_window_height
+        ):
+            self.resize(required_window_width, required_window_height)
 
         # 3. Resize and position content widget
         # print(f"[show_drawer_content] Resizing content widget to: {target_size}") # DEBUG
         self.drawerContent.resize(target_size)
         # Ensure positioning happens after potential window resize
-        self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0) # Align top
+        self.drawerContent.move(
+            self.leftPanel.width() + self.content_spacing, 0
+        )  # Align top
 
         # 4. Update content
-        self.drawerContent.update_content(folder_path) # Pass only the path
+        self.drawerContent.update_content(folder_path)  # Pass only the path
 
         # 5. Make visible
         self.drawerContent.setVisible(True)
-        self.drawerContent.raise_() # Ensure it's on top if overlapping somehow
+        self.drawerContent.raise_()  # Ensure it's on top if overlapping somehow
 
     def hide_drawer_content(self) -> None:
         """Hides the content widget and resizes the main window."""
@@ -190,7 +221,9 @@ class MainWindow(QMainWindow):
     def prompt_for_folder(self) -> Optional[str]:
         """Shows a dialog to select a folder and returns the path."""
         # Ensure the dialog opens on top of the main window
-        folder = QFileDialog.getExistingDirectory(self, "选择文件夹", options=QFileDialog.Option.ShowDirsOnly)
+        folder = QFileDialog.getExistingDirectory(
+            self, "选择文件夹", options=QFileDialog.Option.ShowDirsOnly
+        )
         return folder if folder else None
 
     def get_drawer_content_size(self) -> QSize:
@@ -209,13 +242,75 @@ class MainWindow(QMainWindow):
         # Optionally reset hover state if needed
         # self.drawerList.setCurrentItem(None)
 
+    # --- Tray Icon Methods ---
+
+    def _create_tray_icon(self) -> None:
+        """Creates the system tray icon and its context menu."""
+        self.tray_icon = QSystemTrayIcon(self)
+        icon = QIcon("asset/drawer.icon@3x.png") # Consider making path configurable
+        if icon.isNull():
+            print("Warning: Tray icon file not found or invalid.")
+            # Fallback icon or handle error
+            # For now, let it proceed, might show a default system icon or nothing
+        self.tray_icon.setIcon(icon)
+        self.tray_icon.setToolTip("图标抽屉管理器")
+
+        # Create context menu
+        self.tray_menu = QMenu(self)
+        show_hide_action = QAction("显示/隐藏", self)
+        quit_action = QAction("退出", self)
+
+        # Connect actions
+        show_hide_action.triggered.connect(self._toggle_window_visibility)
+        quit_action.triggered.connect(self._quit_application)
+
+        # Add actions to menu
+        self.tray_menu.addAction(show_hide_action)
+        self.tray_menu.addSeparator()
+        self.tray_menu.addAction(quit_action)
+
+        # Set menu to tray icon
+        self.tray_icon.setContextMenu(self.tray_menu)
+
+        # Connect tray icon activation signal
+        self.tray_icon.activated.connect(self._handle_tray_activated)
+
+        # Show the tray icon
+        self.tray_icon.show()
+
+    def _handle_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        """Handles activation of the system tray icon."""
+        # Show/hide window on left click
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self._toggle_window_visibility()
+        # Context menu is handled automatically on right-click
+
+    def _toggle_window_visibility(self) -> None:
+        """Toggles the visibility of the main window."""
+        if self.isVisible():
+            self.hide()
+        else:
+            self.show()
+            self.activateWindow() # Bring to front
+            self.raise_()         # Ensure it's on top
+
+    def _quit_application(self) -> None:
+        """Cleans up and quits the application."""
+        self.tray_icon.hide() # Hide tray icon before quitting
+        # Add any other cleanup needed here (e.g., saving settings explicitly)
+        QCoreApplication.quit()
+
+    # --- Window Resize Logic ---
+
     def _handle_content_size_changed(self, new_content_size: QSize) -> None:
         """Handles the sizeChanged signal from DrawerContentWidget."""
         if not self.drawerContent.isVisible():
-            return # Don't resize if the content widget isn't visible
+            return  # Don't resize if the content widget isn't visible
 
         # Calculate required window size based on the new content size
-        required_window_width = self.leftPanel.width() + self.content_spacing + new_content_size.width()
+        required_window_width = (
+            self.leftPanel.width() + self.content_spacing + new_content_size.width()
+        )
         required_window_height = max(self.leftPanel.height(), new_content_size.height())
 
         # Resize the main window
@@ -226,19 +321,24 @@ class MainWindow(QMainWindow):
         # (might not be strictly necessary if layout handles it, but good for robustness)
         self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
 
-
     # --- Event Overrides ---
 
     def moveEvent(self, event: QMoveEvent) -> None:
         """Overrides the move event to emit the windowMoved signal."""
         super().moveEvent(event)
         # Emit signal only if the controller exists (to avoid issues during init)
-        if hasattr(self, 'controller') and self.controller:
+        if hasattr(self, "controller") and self.controller:
             self.windowMoved.emit(self.pos())
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Overrides the close event to hide the window instead of quitting."""
+        # Hide the window and ignore the event (preventing application quit)
+        self.hide()
+        event.ignore()
 
     # --- Settings Dialog ---
 
-    def show_settings_dialog(self) -> None: # Renamed from open_settings
+    def show_settings_dialog(self) -> None:  # Renamed from open_settings
         """Shows the settings dialog."""
         # Keep the simple placeholder dialog for now
         dialog = QDialog(self)

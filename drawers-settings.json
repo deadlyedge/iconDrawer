@@ -4,16 +4,16 @@
       "name": "3x",
       "path": "D:\\users\\Desktop\\3x",
       "size": {
-        "width": 592,
-        "height": 476
+        "width": 571,
+        "height": 510
       }
     },
     {
       "name": "Netch",
       "path": "D:\\users\\Desktop\\Netch",
       "size": {
-        "width": 640,
-        "height": 480
+        "width": 544,
+        "height": 379
       }
     },
     {
@@ -26,7 +26,7 @@
     }
   ],
   "window_position": {
-    "x": 365,
+    "x": 763,
     "y": 311
   }
 }
