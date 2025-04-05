@@ -58,6 +58,7 @@ class MainWindow(QMainWindow):
         self.setWindowOpacity(0.8)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
+        self.setWindowFlag(Qt.WindowType.Tool, True)
 
     def _setup_ui(self) -> None:
         """Sets up the main UI layout and widgets."""

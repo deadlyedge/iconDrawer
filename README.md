@@ -62,7 +62,7 @@
     ```
 
 ## 维护与扩展
-- 用户可通过修改 `drawers.json` 来直接更改抽屉配置信息。
+- 用户可通过修改 `drawers-settings.json` 来直接更改抽屉配置信息。
 - 本应用的窗口布局和界面风格易于扩展，欢迎贡献新的功能和界面改进。
 
 
@@ -71,6 +71,6 @@
 - settings
   - color
   - transparancy
-- stay in system tray
-- a logo and icons for the app
-- 
+- ~~stay in system tray~~
+- ~~a logo and icons for the app~~
+  
