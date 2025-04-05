@@ -1,5 +1,4 @@
-import os
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 from PySide6.QtWidgets import (
     QMainWindow,
     QWidget,
@@ -14,8 +13,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QPoint, QSize, Signal
 from PySide6.QtGui import QMoveEvent # Import QMoveEvent
-# Import AppController conditionally for type hinting if needed, or directly
-# from modules.controller import AppController # Direct import might cause issues if controller imports MainWindow
+
 from modules.settings_manager import DrawerDict # Keep DrawerDict if used in view methods
 from modules.list import DrawerListWidget
 from modules.content import DrawerContentWidget

@@ -20,4 +20,5 @@ if __name__ == "__main__":
     mainWindow = MainWindow()
     mainWindow.resize(800, 600)
     mainWindow.show()
+    
     sys.exit(app.exec())

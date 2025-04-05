@@ -33,7 +33,7 @@ class AppController(QObject):
     # --- Data Management ---
 
     def _load_initial_data(self) -> None:
-        """Loads initial configuration and updates the view."""
+        """Loads initial settings and updates the view."""
         drawers, window_position = SettingsManager.load_settings()
         self._drawers_data = drawers
         self._window_position = window_position
@@ -43,7 +43,7 @@ class AppController(QObject):
         if self._window_position:
             self._main_view.set_initial_position(self._window_position)
 
-    def save_configuration(self) -> None:
+    def save_settings(self) -> None:
         """Saves the current application state (drawers and window position)."""
         # Ensure the latest window position is captured before saving
         current_pos = self._main_view.get_current_position()
@@ -51,7 +51,7 @@ class AppController(QObject):
             self._window_position = current_pos
         # logging.info(f"Saving data: {self._drawers_data}") # DEBUG removed
         SettingsManager.save_settings(self._drawers_data, self._window_position)
-        logging.info("Configuration saved.") # Keep critical log
+        logging.info("Settings saved.") # Keep critical log
 
     # --- Drawer Operations ---
 
@@ -71,7 +71,7 @@ class AppController(QObject):
                 new_drawer_data: DrawerDict = {"name": name, "path": folder_path_str} # Store path as string initially
                 self._drawers_data.append(new_drawer_data)
                 self._main_view.add_drawer_item(new_drawer_data)
-                self.save_configuration()
+                self.save_settings()
             else:
                 # Handle invalid folder selection
                 logging.error(f"Selected path is not a valid directory: {folder_path_str}")
@@ -89,7 +89,7 @@ class AppController(QObject):
                     # logging.info(f"Updating size for drawer '{drawer_name}' to {new_size}") # DEBUG removed
                 break # Found the drawer, no need to continue loop
         if updated:
-            self.save_configuration()
+            self.save_settings()
         # else:
             # logging.warning(f"Could not find drawer '{drawer_name}' to update size.") # Warning removed
 
@@ -99,7 +99,7 @@ class AppController(QObject):
         if self._window_position != pos:
             self._window_position = pos
             # Debounce saving or save on specific events like dragFinished
-            # self.save_configuration() # Avoid saving on every move event
+            # self.save_settings() # Avoid saving on every move event
 
     # --- Slot Handlers for View Signals ---
 
@@ -215,9 +215,9 @@ class AppController(QObject):
                  # logging.warning("Cannot save size on resize finish, locked item has no name.")
 
     def handle_window_drag_finished(self) -> None:
-        """Saves configuration when window dragging finishes."""
+        """Saves settings when window dragging finishes."""
         # This signal implies both window position and potentially drawer size might need saving.
-        # 1. Update window position in memory (save_configuration will handle the rest)
+        # 1. Update window position in memory (save_settings will handle the rest)
         current_pos = self._main_view.get_current_position()
         if current_pos and self._window_position != current_pos:
              self._window_position = current_pos # Update internal state
@@ -236,9 +236,9 @@ class AppController(QObject):
                             # logging.info(f"Drawer '{drawer_name}' size updated in memory to {current_size} on window drag finish.")
                         break
 
-        # 3. Save configuration (includes potentially updated position and size)
-        self.save_configuration()
-        # logging.info("Window drag finished, configuration saved.")
+        # 3. Save settings (includes potentially updated position and size)
+        self.save_settings()
+        # logging.info("Window drag finished, settings saved.")
 
 
     def handle_settings_requested(self) -> None:

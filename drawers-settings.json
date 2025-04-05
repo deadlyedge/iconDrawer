@@ -1,0 +1,32 @@
+{
+  "drawers": [
+    {
+      "name": "3x",
+      "path": "D:\\users\\Desktop\\3x",
+      "size": {
+        "width": 592,
+        "height": 476
+      }
+    },
+    {
+      "name": "Netch",
+      "path": "D:\\users\\Desktop\\Netch",
+      "size": {
+        "width": 640,
+        "height": 480
+      }
+    },
+    {
+      "name": "mkvtoolnix",
+      "path": "D:\\users\\Desktop\\mkvtoolnix",
+      "size": {
+        "width": 646,
+        "height": 477
+      }
+    }
+  ],
+  "window_position": {
+    "x": 365,
+    "y": 311
+  }
+}
