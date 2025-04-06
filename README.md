@@ -1,77 +1,75 @@
-# 图标抽屉管理器
+# Icon Drawer Manager
 ![App Icon](https://github.com/deadlyedge/iconDrawer/blob/master/asset/drawer.icon.4.png)
 
-## 简介
+## Introduction
 
-我之前一直在使用stardock fences，不过我意识到事实上我需要的只是一个能够很好的整理桌面图标的简单应用。我做了一些搜索和研究，我发现这个简单的功能似乎并没有一个简单的实现，于是就有了这个项目。
+I've been using Stardock Fences, but I realized that what I really need is a simple application to organize my desktop icons effectively. After some searching and research, I found that there wasn't a straightforward implementation for this simple function, which led to the creation of this project.
 
-本应用基于 PySide6 构建，是一个图形化的抽屉管理工具。用户可以管理和浏览存储在计算机上的文件夹（抽屉），并通过两个独立窗口展示抽屉列表和抽屉内容。从效率和功能出发，当然我认为C#、.NET会是更好的开发平台。不过我本人实在是不懂C，所以只能尝试使用python来实现基础功能。希望通过这个项目，能有开发者（其实我觉得最好是PowerToys的开发人员）意识到这个功能的实用性，做出更好的产品。
+Built with PySide6, this application is a graphical drawer management tool. Users can manage and browse folders (drawers) stored on their computer, displaying the drawer list and drawer content in two separate windows. From an efficiency and functionality perspective, I believe C# and .NET would be better development platforms. However, I'm not familiar with C, so I attempted to implement the basic features using Python. I hope this project inspires developers (ideally, the PowerToys team) to recognize the utility of this feature and create even better products.
 
-## 主要功能
-- **抽屉列表管理**
-  - 从配置文件 (`drawers.json`) 加载抽屉信息。
-  - 显示抽屉列表，用户可以通过拖拽区域移动窗口。
-  - 支持添加新的抽屉，通过目录选择对话框选择文件夹，并将其保存到配置文件中。
-  
-- **抽屉内容展示**
-  - 当鼠标悬停或点击抽屉列表项时，右侧的抽屉内容显示窗口会自动显示所选文件夹内的内容（文件和文件夹图标）。
-  - 内容窗口采用无边框和半透明背景，且始终保持位于抽屉列表窗口的右侧，随窗口移动和大小变化而自动调整位置。
-  - 当未选中任何抽屉或鼠标离开列表窗口时，内容窗口会自动隐藏。
-  - 支持通过自定义大小调整手柄（Size Grip）调整列表窗口的大小。
+## Main Features
+- **Drawer List Management**
+  - Loads drawer information from the configuration file (`drawers.json`).
+  - Displays the list of drawers; users can move the window using the drag area.
+  - Supports adding new drawers by selecting a folder through a directory selection dialog and saving it to the configuration file.
 
-- **视觉和交互设计**
-  - 窗口和两个主要组件均采用无边框设计，并通过设置半透明背景（透明度为 0.8）实现现代化视觉效果。
-  - 抽屉列表窗口顶部设置了一个拖拽区域，允许用户拖动窗口，实现自定义位置调整。
+- **Drawer Content Display**
+  - When hovering over or clicking a drawer list item, the drawer content window on the right automatically displays the contents (file and folder icons) of the selected folder.
+  - The content window is borderless with a semi-transparent background and always stays to the right of the drawer list window, automatically adjusting its position as the list window moves or resizes.
+  - The content window automatically hides when no drawer is selected or the mouse leaves the list window area.
+  - Supports resizing the list window using a custom size grip handle.
 
-## 技术细节
-- **开发框架**: 使用 PySide6 进行界面开发。
-- **配置文件**: 使用 `modules/config_manager.py` 模块管理 `drawers.json` 中的抽屉信息（`name` 和 `path`）。
-- **窗口管理与交互**: 
-  - `DrawerListWindow`: 展示抽屉列表，包含用于移动窗口的拖拽区域 (`modules/drag_area.py`) 和用于调整大小的手柄 (`modules/custom_size_grip.py`)。
-  - `DrawerContentWindow`: 展示所选抽屉的内容 (`modules/content.py`, `modules/content_utils.py`)。
-  - `modules/controller.py`: 协调列表窗口和内容窗口之间的交互逻辑。
-  - `modules/icon_utils.py`: 处理文件和文件夹图标的显示。
-- **样式**: 通过 Qt Style Sheets (`modules/style.qss`) 实现自定义界面样式。
+- **Visual and Interaction Design**
+  - Both the window and the two main components feature a borderless design with a semi-transparent background (opacity 0.8) for a modern visual effect.
+  - The top of the drawer list window includes a drag area, allowing users to move the window for custom positioning.
 
-## 使用方法
-1. 运行程序后，会显示抽屉列表窗口。
-2. 用户可以通过拖拽窗口顶部的拖拽区域移动抽屉列表窗口。
-3. 点击“添加抽屉”按钮可以选择新目录来添加抽屉。
-4. 当鼠标悬停或点击某一抽屉时，右侧窗口会自动显示该抽屉内的文件及文件夹图标；若鼠标离开列表区域或未选中抽屉，右侧窗口则隐藏。
+## Technical Details
+- **Development Framework**: Uses PySide6 for interface development.
+- **Configuration File**: Manages drawer information (`name` and `path`) in `drawers.json` using the `modules/config_manager.py` module.
+- **Window Management & Interaction**:
+  - `DrawerListWindow`: Displays the drawer list, includes a drag area (`modules/drag_area.py`) for moving the window and a size grip (`modules/custom_size_grip.py`) for resizing.
+  - `DrawerContentWindow`: Displays the content of the selected drawer (`modules/content.py`, `modules/content_utils.py`).
+  - `modules/controller.py`: Coordinates the interaction logic between the list and content windows.
+  - `modules/icon_utils.py`: Handles the display of file and folder icons.
+- **Styling**: Uses Qt Style Sheets (`modules/style.qss`) for custom interface styling.
 
-## 依赖与环境
-- Python 版本要求：Python 3.x (具体版本可在 `.python-version` 查看)
-- 依赖管理：项目依赖项定义在 `pyproject.toml` 文件中。
-- 主要依赖：PySide6 等 (详见 `pyproject.toml`)。
+## How to Use
+1. Run the program to display the drawer list window.
+2. Move the drawer list window by dragging the area at the top.
+3. Click the "Add Drawer" button to select a new directory and add a drawer.
+4. Hover over or click a drawer item to display its contents in the right window; the right window hides when the mouse leaves the list area or no drawer is selected.
 
-## 安装与运行
-1.  **安装依赖**: 建议使用 `uv` 或 `pip` 安装依赖。在项目根目录下运行：
+## Dependencies and Environment
+- Python Version Requirement: Python 3.x (specific version can be found in `.python-version`)
+- Dependency Management: Project dependencies are defined in the `pyproject.toml` file.
+- Main Dependencies: PySide6, etc. (see `pyproject.toml` for details).
+
+## Installation and Running
+1.  **Install Dependencies**: It is recommended to use `uv` or `pip` to install dependencies. Run the following in the project root directory:
     ```bash
-    # 使用 uv (推荐)
-    uv pip install -r requirements.txt 
-    # 或 uv sync
+    # Using uv (recommended)
+    uv pip install -r requirements.txt
+    # or uv sync
 
-    # 或者使用 pip
+    # Or using pip
     pip install -r requirements.txt
-    # 或 pip install . 
+    # or pip install .
     ```
-    *注意：如果 `requirements.txt` 不存在或不是最新的，请根据 `pyproject.toml` 生成或直接使用 `pip install .`*
+    *Note: If `requirements.txt` does not exist or is not up-to-date, please generate it based on `pyproject.toml` or use `pip install .` directly.*
 
-2.  **运行程序**:
+2.  **Run the Program**:
     ```bash
     python main.py
     ```
 
-## 维护与扩展
-- 用户可通过修改 `drawers-settings.json` 来直接更改抽屉配置信息。
-- 本应用的窗口布局和界面风格易于扩展，欢迎贡献新的功能和界面改进。
-
+## Maintenance and Extension
+- Users can directly modify drawer configuration information by editing `drawers-settings.json`.
+- The window layout and interface style of this application are easy to extend. Contributions for new features and interface improvements are welcome.
 
 ## TODOs
 - drag in to copy or move files to drawers
 - settings
   - color
-  - transparancy
+  - transparency
 - ~~stay in system tray~~
 - ~~a logo and icons for the app~~
-  
