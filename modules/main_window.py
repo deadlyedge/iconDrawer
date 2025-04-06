@@ -298,7 +298,7 @@ class MainWindow(QMainWindow):
     def _create_tray_icon(self) -> None:
         """Creates the system tray icon and its context menu."""
         self.tray_icon = QSystemTrayIcon(self)
-        icon = QIcon("asset/drawer.icon@3x.png")  # Consider making path configurable
+        icon = QIcon("asset/drawer.icon.4.ico")  # Consider making path configurable
         if icon.isNull():
             print("Warning: Tray icon file not found or invalid.")
             # Fallback icon or handle error

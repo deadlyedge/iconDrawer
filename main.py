@@ -9,7 +9,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # Set Application Icon (same as tray icon)
-    app_icon = QIcon("asset/drawer.icon@3x.png")
+    app_icon = QIcon("asset/drawer.icon.4.ico")
     if app_icon.isNull():
         print("Warning: Application icon file not found or invalid.")
     app.setWindowIcon(app_icon)
