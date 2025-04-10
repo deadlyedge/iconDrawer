@@ -16,6 +16,7 @@ class CustomSizeGrip(QWidget):
         super().__init__(parent)
         self.setFixedSize(16, 16)  # 设置手柄的固定大小
         self.setCursor(Qt.CursorShape.SizeFDiagCursor)
+        # self.setStyleSheet("border-bottom-right-radius: 5px")
         self._is_resizing = False
         self._start_mouse_pos: QPoint | None = None
         self._start_widget_geo: QRect | None = None

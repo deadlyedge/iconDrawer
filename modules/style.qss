@@ -215,7 +215,7 @@ QDialogButtonBox QPushButton:pressed {
 /* Style for the visual container within FileIconWidget using custom property */
 QWidget[isVisualContainer="true"] {
 	background-color: transparent;
-	border-radius: 0px;
+	border-radius: 2px;
 	padding: 2px;
 }
 

@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
 )
-import logging # Import logging
+import logging  # Import logging
 from PySide6.QtGui import (
     QIcon,
     QDesktopServices,
@@ -25,11 +25,11 @@ from PySide6.QtGui import (
     QDragLeaveEvent,
 )
 from PySide6.QtCore import Qt, QSize, QUrl, Signal
-from typing import Optional, Callable, TYPE_CHECKING # Import TYPE_CHECKING
+from typing import Optional, Callable, TYPE_CHECKING  # Import TYPE_CHECKING
 
 # Import refactored functions and necessary classes
 from .custom_size_grip import CustomSizeGrip
-from .icon_utils import get_icon_for_path # Keep this for file items
+from .icon_utils import get_icon_for_path  # Keep this for file items
 
 from .content_utils import calculate_available_label_width
 from .content_utils import truncate_text  # Keep truncate_text for file names
@@ -94,13 +94,15 @@ class DrawerContentWidget(QWidget):
     resizeFinished = Signal()
 
     # Modify __init__ to accept the controller
-    def __init__(self, controller: "AppController", parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, controller: "AppController", parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent)
-        self.controller = controller # Store controller reference
+        self.controller = controller  # Store controller reference
         self.setAcceptDrops(True)
         self.current_folder = ""
         # Initialize first
-        self.icon_size = QSize(96, 96) # Keep this for item icons for now
+        self.icon_size = QSize(96, 96)  # Keep this for item icons for now
         self.item_size = (100, 120)
         self.items = []
 
@@ -182,12 +184,14 @@ class DrawerContentWidget(QWidget):
 
         self.folder_icon_label = QLabel(self.folder_container)
         # Use icon_provider via controller to get the folder icon, with fallback
-        folder_icon = QIcon() # Default empty icon
+        folder_icon = QIcon()  # Default empty icon
         if self.controller and self.controller.icon_provider:
             folder_icon = self.controller.icon_provider.get_folder_icon()
         else:
-            logging.error("Icon provider not available in DrawerContentWidget, using empty icon for folder.")
-        self.folder_icon_label.setPixmap(folder_icon.pixmap(16)) # Use 16px size
+            logging.error(
+                "Icon provider not available in DrawerContentWidget, using empty icon for folder."
+            )
+        self.folder_icon_label.setPixmap(folder_icon.pixmap(16))  # Use 16px size
         folder_layout.addWidget(self.folder_icon_label)  # Add to inner layout
 
         self.folder_label = QLabel(
@@ -402,7 +406,9 @@ class DrawerContentWidget(QWidget):
             self.folder_label.setToolTip(self.current_folder)
 
         except Exception as e:
-            logging.error(f"Error updating folder label text: {e}") # Use logging instead of print
+            logging.error(
+                f"Error updating folder label text: {e}"
+            )  # Use logging instead of print
             if self.folder_label:
                 self.folder_label.setText("...")  # Fallback on error
                 self.folder_label.setToolTip(self.current_folder)  # Still show tooltip
@@ -437,7 +443,9 @@ class DrawerContentWidget(QWidget):
                 if os.path.isfile(file_path):
                     src_drive = os.path.splitdrive(file_path)[0].upper()
                     dest_drive = os.path.splitdrive(self.current_folder)[0].upper()
-                    dest_path = os.path.join(self.current_folder, os.path.basename(file_path))
+                    dest_path = os.path.join(
+                        self.current_folder, os.path.basename(file_path)
+                    )
                     try:
                         if src_drive == dest_drive:
                             shutil.move(file_path, dest_path)
