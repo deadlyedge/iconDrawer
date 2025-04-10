@@ -1,12 +1,13 @@
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import Qt, QPoint, Signal, QRect
-from PySide6.QtGui import QMouseEvent, QPaintEvent, QPainter, QColor
+from PySide6.QtGui import QMouseEvent, QPaintEvent, QPainter, QColor, QPixmap
 
 
 class CustomSizeGrip(QWidget):
     """
     一个自定义的大小调整手柄部件，允许用户通过拖动来调整父部件的大小。
     """
+
     resized = Signal(QPoint)  # 发出包含大小增量的信号
     resizeStarted = Signal()
     resizeFinished = Signal()
@@ -31,7 +32,7 @@ class CustomSizeGrip(QWidget):
             # 获取父部件（DrawerContentWidget的main_visual_container）的几何形状
             parent = self.parentWidget()
             if parent:
-                 # 我们需要调整的是 DrawerContentWidget 的大小，它是 self.parentWidget() 的父部件
+                # 我们需要调整的是 DrawerContentWidget 的大小，它是 self.parentWidget() 的父部件
                 top_level_widget = parent.parentWidget()
                 if top_level_widget:
                     self._start_widget_geo = top_level_widget.geometry()
@@ -94,19 +95,16 @@ class CustomSizeGrip(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        # 使用简单的点状图案作为示例
-        pen_color = QColor(Qt.GlobalColor.gray)
-        painter.setPen(pen_color)
+        # Draw a white filled triangle pointing to the bottom right
+        painter.setBrush(QColor(Qt.GlobalColor.white))
+        painter.setPen(Qt.GlobalColor.white)
 
-        rect = self.rect()
-        dot_size = 2
-        spacing = 4
-
-        # 从右下角开始绘制点阵
-        for y in range(rect.height() - dot_size, -1, -spacing):
-             for x in range(rect.width() - dot_size, -1, -spacing):
-                 # 确保点在对角线附近
-                 if (rect.width() - x) + (rect.height() - y) < rect.width() + dot_size:
-                     painter.drawEllipse(x, y, dot_size, dot_size)
+        # Define the points of the triangle
+        points = [
+            QPoint(0, self.height()),  # Bottom left
+            QPoint(self.width(), self.height()),  # Bottom right
+            QPoint(self.width(), 0),  # Top right
+        ]
+        painter.drawPolygon(points)
 
         painter.end()
