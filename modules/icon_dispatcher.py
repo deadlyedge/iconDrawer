@@ -3,6 +3,8 @@ import logging
 from typing import Optional
 from PySide6.QtCore import QFileInfo # Import QFileInfo
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import QFileInfo, QSize # Import QFileInfo and QSize
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QFileIconProvider # Import QFileIconProvider
 
 from .icon_provider import DefaultIconProvider
@@ -16,18 +18,21 @@ from .icon_workers.thumbnail_worker import ThumbnailWorker # Import new worker
 class IconDispatcher:
     """Dispatches icon retrieval tasks to appropriate workers."""
 
-    def __init__(self, icon_provider: DefaultIconProvider):
+    def __init__(self, icon_provider: DefaultIconProvider, thumbnail_size: QSize):
         """
-        Initializes the dispatcher with an icon provider and worker instances.
+        Initializes the dispatcher with an icon provider, thumbnail size,
+        and worker instances.
 
         Args:
             icon_provider: An instance of DefaultIconProvider.
+            thumbnail_size: The target QSize for thumbnails.
         """
         self.icon_provider = icon_provider
         self.directory_worker = DirectoryIconWorker()
         self.lnk_worker = LnkIconWorker()
         self.file_worker = FileIconWorker()
-        self.thumbnail_worker = ThumbnailWorker() # Instantiate ThumbnailWorker
+        # Pass thumbnail_size to ThumbnailWorker constructor
+        self.thumbnail_worker = ThumbnailWorker(target_size=thumbnail_size)
         self._qt_icon_provider = QFileIconProvider() # Instantiate QFileIconProvider
         # Add other workers here if needed in the future
 

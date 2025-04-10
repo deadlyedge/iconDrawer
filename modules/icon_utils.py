@@ -1,12 +1,11 @@
 import logging
 from typing import Optional
 from PySide6.QtGui import QIcon
-# QFileIconProvider will be used within the dispatcher now
-# from PySide6.QtWidgets import QFileIconProvider
-# from PySide6.QtCore import QFileInfo
+from PySide6.QtCore import QSize # Import QSize
 
 # Import the refactored components
-from .icon_provider import DefaultIconProvider # Keep for fallback initialization
+from .settings_manager import SettingsManager # Import SettingsManager
+from .icon_provider import DefaultIconProvider
 from .icon_validators import validate_path
 from .icon_dispatcher import IconDispatcher
 
@@ -19,17 +18,37 @@ _initialized = False # For custom components initialization
 # --- Initialization Function (for custom components) ---
 # Removed global _qt_icon_provider instance
 def _initialize_icon_components():
-    """Initializes the icon components only when needed."""
+    """Initializes the icon components using loaded settings only when needed."""
     global _icon_provider, _icon_dispatcher, _unknown_icon, _initialized
     if _initialized:
         return
 
     try:
-        _icon_provider = DefaultIconProvider()
-        _icon_dispatcher = IconDispatcher(_icon_provider)
+        # Load all settings
+        (
+            _, # drawers (not needed here)
+            _, # window_pos (not needed here)
+            _, # bg_color (not needed here)
+            _, # start_flag (not needed here)
+            icon_folder_path,
+            icon_file_theme,
+            icon_unknown_theme,
+            thumbnail_qsize
+        ) = SettingsManager.load_settings()
+
+        # Initialize provider with loaded settings
+        _icon_provider = DefaultIconProvider(
+            folder_icon_path=icon_folder_path,
+            file_icon_theme=icon_file_theme,
+            unknown_icon_theme=icon_unknown_theme
+        )
+        # Initialize dispatcher with provider and thumbnail size
+        _icon_dispatcher = IconDispatcher(_icon_provider, thumbnail_qsize)
+        # Get the unknown icon from the initialized provider
         _unknown_icon = _icon_provider.get_unknown_icon()
+
         _initialized = True
-        logging.debug("Icon components initialized successfully.")
+        logging.debug("Icon components initialized successfully using settings.")
     except Exception as e:
         logging.critical(f"Failed to initialize icon components: {e}", exc_info=True)
         # Ensure fallbacks are set even on error

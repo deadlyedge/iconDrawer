@@ -1,36 +1,75 @@
 from typing import List, Optional, TYPE_CHECKING, Tuple
-from PySide6.QtCore import QObject, QPoint, QSize, Slot # Import Slot
-from PySide6.QtWidgets import QListWidgetItem, QMessageBox # Added QMessageBox
+from PySide6.QtCore import QObject, QPoint, QSize, Slot
+from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 from modules.settings_manager import SettingsManager, DrawerDict
 from pathlib import Path
-import logging # Import logging
+import logging
+
+# Import icon_utils and DefaultIconProvider for initialization and type hint
+import modules.icon_utils
+from modules.icon_provider import DefaultIconProvider
 
 # Configure basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 # Use TYPE_CHECKING to avoid circular imports for type hints
 if TYPE_CHECKING:
     from modules.main_window import MainWindow
 
 # Define USER_ROLE constant for item data
-USER_ROLE: int = 32 # Qt.ItemDataRole.UserRole starts at 32
+USER_ROLE: int = 32  # Qt.ItemDataRole.UserRole starts at 32
+
 
 class AppController(QObject):
     """
     Manages the application's state and logic, acting as a controller
     between the view (MainWindow) and the data (ConfigManager).
     """
-    def __init__(self, main_view: 'MainWindow', parent: Optional[QObject] = None) -> None:
+
+    def __init__(
+        self, main_view: "MainWindow", parent: Optional[QObject] = None
+    ) -> None:
         super().__init__(parent)
         self._main_view = main_view
         # Initialize SettingsManager instance for easier access
         self.settings_manager = SettingsManager()
         self._drawers_data: List[DrawerDict] = []
         self._window_position: Optional[QPoint] = None
-        self._background_color_hsla: Tuple[float, float, float, float] = self.settings_manager.DEFAULT_BG_COLOR_HSLA
-        self._start_with_windows: bool = self.settings_manager.DEFAULT_START_WITH_WINDOWS
+        # Store all loaded settings (use CSS format for HSLA)
+        self._background_color_hsla: Tuple[int, int, int, float] = (
+            self.settings_manager.DEFAULT_BG_COLOR_HSLA
+        )
+        self._start_with_windows: bool = (
+            self.settings_manager.DEFAULT_START_WITH_WINDOWS
+        )
+        self._default_icon_folder_path: str = (
+            self.settings_manager.DEFAULT_ICON_FOLDER_PATH
+        )
+        self._default_icon_file_theme: str = (
+            self.settings_manager.DEFAULT_ICON_FILE_THEME
+        )
+        self._default_icon_unknown_theme: str = (
+            self.settings_manager.DEFAULT_ICON_UNKNOWN_THEME
+        )
+        self._thumbnail_size: QSize = QSize(
+            self.settings_manager.DEFAULT_THUMBNAIL_SIZE.width,
+            self.settings_manager.DEFAULT_THUMBNAIL_SIZE.height,
+        )
         self._locked: bool = False
         self._locked_item_data: Optional[DrawerDict] = None
+        # Add icon_provider attribute
+        self.icon_provider: Optional[DefaultIconProvider] = None
+
+        # Explicitly initialize icon components here
+        modules.icon_utils._initialize_icon_components()
+        # Assign the initialized provider to the controller attribute
+        self.icon_provider = modules.icon_utils._icon_provider
+        if not self.icon_provider:
+            logging.critical("Icon provider failed to initialize in controller!")
+            # Handle critical failure? Maybe raise an exception or use a dummy provider?
+            # For now, log the critical error. Downstream code needs to handle None.
 
         self._load_initial_data()
 
@@ -39,13 +78,28 @@ class AppController(QObject):
     def _load_initial_data(self) -> None:
         """Loads initial settings and updates the view."""
         # Load all settings
-        drawers, window_pos, bg_color, start_flag = self.settings_manager.load_settings()
+        (
+            drawers,
+            window_pos,
+            bg_color,
+            start_flag,
+            icon_folder_path,
+            icon_file_theme,
+            icon_unknown_theme,
+            thumbnail_qsize,
+        ) = self.settings_manager.load_settings()
+
+        # Store loaded settings
         self._drawers_data = drawers
         self._window_position = window_pos
         self._background_color_hsla = bg_color
         self._start_with_windows = start_flag
+        self._default_icon_folder_path = icon_folder_path
+        self._default_icon_file_theme = icon_file_theme
+        self._default_icon_unknown_theme = icon_unknown_theme
+        self._thumbnail_size = thumbnail_qsize
 
-        # Update view components
+        # Update view components that depend on loaded settings
         self._main_view.populate_drawer_list(self._drawers_data)
         if self._window_position:
             self._main_view.set_initial_position(self._window_position)
@@ -56,14 +110,21 @@ class AppController(QObject):
         # Ensure the latest window position is captured before saving
         current_pos = self._main_view.get_current_position()
         if current_pos:
-            self._window_position = current_pos
+            self._window_position = current_pos  # Update internal state if changed
+
+        # Call save_settings with all required arguments
         self.settings_manager.save_settings(
             drawers=self._drawers_data,
-            window_position=self._window_position,
+            window_position=self._window_position,  # Pass potentially updated position
             background_color_hsla=self._background_color_hsla,
-            start_with_windows=self._start_with_windows
+            start_with_windows=self._start_with_windows,
+            # Pass through the non-user-modifiable settings loaded during init
+            default_icon_folder_path=self._default_icon_folder_path,
+            default_icon_file_theme=self._default_icon_file_theme,
+            default_icon_unknown_theme=self._default_icon_unknown_theme,
+            thumbnail_size=self._thumbnail_size,
         )
-        logging.info("Settings saved.") # Keep critical log
+        # SettingsManager handles logging success/failure internally now
 
     # --- Drawer Operations ---
 
@@ -75,19 +136,34 @@ class AppController(QObject):
             if folder_path.is_dir():
                 name = folder_path.name
                 # Check for duplicate names or paths if necessary
-                is_duplicate = any(d.get("path") == folder_path_str for d in self._drawers_data)
+                is_duplicate = any(
+                    d.get("path") == folder_path_str for d in self._drawers_data
+                )
                 if is_duplicate:
-                    QMessageBox.warning(self._main_view, "重复抽屉", f"路径 '{folder_path_str}' 已经被添加。")
+                    QMessageBox.warning(
+                        self._main_view,
+                        "重复抽屉",
+                        f"路径 '{folder_path_str}' 已经被添加。",
+                    )
                     return
 
-                new_drawer_data: DrawerDict = {"name": name, "path": folder_path_str} # Store path as string initially
+                new_drawer_data: DrawerDict = {
+                    "name": name,
+                    "path": folder_path_str,
+                }  # Store path as string initially
                 self._drawers_data.append(new_drawer_data)
                 self._main_view.add_drawer_item(new_drawer_data)
                 self.save_settings()
             else:
                 # Handle invalid folder selection
-                logging.error(f"Selected path is not a valid directory: {folder_path_str}")
-                QMessageBox.warning(self._main_view, "无效路径", f"选择的路径不是一个有效的文件夹:\n{folder_path_str}")
+                logging.error(
+                    f"Selected path is not a valid directory: {folder_path_str}"
+                )
+                QMessageBox.warning(
+                    self._main_view,
+                    "无效路径",
+                    f"选择的路径不是一个有效的文件夹:\n{folder_path_str}",
+                )
 
     def update_drawer_size(self, drawer_name: str, new_size: QSize) -> None:
         """Updates the size information for a specific drawer."""
@@ -96,9 +172,9 @@ class AppController(QObject):
             if drawer.get("name") == drawer_name:
                 # Only update if the size actually changed to avoid unnecessary saves
                 if drawer.get("size") != new_size:
-                    drawer["size"] = new_size # Directly update the QSize object
+                    drawer["size"] = new_size  # Directly update the QSize object
                     updated = True
-                break # Found the drawer, no need to continue loop
+                break  # Found the drawer, no need to continue loop
         if updated:
             self.save_settings()
 
@@ -126,9 +202,15 @@ class AppController(QObject):
 
         folder_path_str = drawer_data.get("path")
         if not folder_path_str or not Path(folder_path_str).is_dir():
-             logging.error(f"Invalid or non-existent path for item '{item.text()}': {folder_path_str}")
-             QMessageBox.warning(self._main_view, "路径无效", f"抽屉 '{item.text()}' 的路径无效或不存在:\n{folder_path_str}\n请考虑移除此抽屉。")
-             return
+            logging.error(
+                f"Invalid or non-existent path for item '{item.text()}': {folder_path_str}"
+            )
+            QMessageBox.warning(
+                self._main_view,
+                "路径无效",
+                f"抽屉 '{item.text()}' 的路径无效或不存在:\n{folder_path_str}\n请考虑移除此抽屉。",
+            )
+            return
 
         # --- Step 1: Get the LATEST size information for the selected drawer ---
         # The item data might be stale, so always fetch the current config from _drawers_data
@@ -145,21 +227,25 @@ class AppController(QObject):
             target_content_size = current_drawer_config.get("size")
             # Use default size if not found or invalid in the current config
             if not isinstance(target_content_size, QSize):
-                target_content_size = QSize(640, 480) # Default size
+                target_content_size = QSize(640, 480)  # Default size
             # Update the item's data to reflect the latest config (optional but good practice)
             item.setData(USER_ROLE, current_drawer_config)
         else:
             # Fallback: If somehow the drawer isn't in _drawers_data, use item data or default
-            logging.warning(f"Could not find '{drawer_name_to_find}' in current config, using item data size.")
+            logging.warning(
+                f"Could not find '{drawer_name_to_find}' in current config, using item data size."
+            )
             target_content_size = drawer_data.get("size")
             if not isinstance(target_content_size, QSize):
-                target_content_size = QSize(640, 480) # Default size
+                target_content_size = QSize(640, 480)  # Default size
 
         # --- Step 2: Handle Locking Logic ---
         if self._locked:
             # If already locked, check if the same item was clicked again
             # Use the most up-to-date config for comparison
-            compare_data = current_drawer_config if current_drawer_config else drawer_data
+            compare_data = (
+                current_drawer_config if current_drawer_config else drawer_data
+            )
             if compare_data == self._locked_item_data:
                 # Case A: Clicked the currently locked item -> Unlock and hide
                 self._locked = False
@@ -171,17 +257,28 @@ class AppController(QObject):
                 if self._locked_item_data:
                     old_drawer_name = self._locked_item_data.get("name")
                     if old_drawer_name:
-                        old_size = self._main_view.get_drawer_content_size() # Get size *before* content updates
-                        self.update_drawer_size(old_drawer_name, old_size) # Save if changed
+                        old_size = (
+                            self._main_view.get_drawer_content_size()
+                        )  # Get size *before* content updates
+                        self.update_drawer_size(
+                            old_drawer_name, old_size
+                        )  # Save if changed
                 # --- Switch to the new item ---
-                self._locked_item_data = current_drawer_config if current_drawer_config else drawer_data # Store the latest config
-                self._main_view.show_drawer_content(self._locked_item_data, target_content_size)
+                self._locked_item_data = (
+                    current_drawer_config if current_drawer_config else drawer_data
+                )  # Store the latest config
+                self._main_view.show_drawer_content(
+                    self._locked_item_data, target_content_size
+                )
         else:
             # Case C: Not locked -> Lock and show the selected item
             self._locked = True
-            self._locked_item_data = current_drawer_config if current_drawer_config else drawer_data # Store the latest config
-            self._main_view.show_drawer_content(self._locked_item_data, target_content_size)
-
+            self._locked_item_data = (
+                current_drawer_config if current_drawer_config else drawer_data
+            )  # Store the latest config
+            self._main_view.show_drawer_content(
+                self._locked_item_data, target_content_size
+            )
 
     def handle_selection_cleared(self) -> None:
         """Hides content view if not locked."""
@@ -199,13 +296,13 @@ class AppController(QObject):
             drawer_name = self._locked_item_data.get("name")
             if drawer_name:
                 current_size = self._main_view.get_drawer_content_size()
-                self.update_drawer_size(drawer_name, current_size) # Save if changed
+                self.update_drawer_size(drawer_name, current_size)  # Save if changed
 
         # --- Actual closing logic ---
         self._locked = False
         self._locked_item_data = None
         self._main_view.hide_drawer_content()
-        self._main_view.clear_list_selection() # Ensure list selection is also cleared
+        self._main_view.clear_list_selection()  # Ensure list selection is also cleared
 
     def handle_content_resize_finished(self) -> None:
         """Handles the resize finished signal from the content widget."""
@@ -214,7 +311,7 @@ class AppController(QObject):
             current_size = self._main_view.get_drawer_content_size()
             drawer_name = self._locked_item_data.get("name")
             if drawer_name:
-                self.update_drawer_size(drawer_name, current_size) # Save if changed
+                self.update_drawer_size(drawer_name, current_size)  # Save if changed
 
     def handle_window_drag_finished(self) -> None:
         """Saves settings when window dragging finishes."""
@@ -222,7 +319,7 @@ class AppController(QObject):
         # 1. Update window position in memory (save_settings will handle the rest)
         current_pos = self._main_view.get_current_position()
         if current_pos and self._window_position != current_pos:
-             self._window_position = current_pos # Update internal state
+            self._window_position = current_pos  # Update internal state
 
         # 2. Update size of the locked drawer in memory if it's visible
         if self._locked and self._locked_item_data:
@@ -240,19 +337,28 @@ class AppController(QObject):
         # 3. Save settings (includes potentially updated position and size)
         self.save_settings()
 
-
     def handle_settings_requested(self) -> None:
         """Handles the request to open the settings dialog."""
         self._main_view.show_settings_dialog()
 
     @Slot(float, float, float, float)
-    def handle_background_applied(self, h: float, s: float, l: float, a: float) -> None:
-        """Handles the final background color applied from settings dialog."""
-        new_color = (h, s, l, a)
-        if self._background_color_hsla != new_color:
-            self._background_color_hsla = new_color
-            self.save_settings() # Save all settings when background is confirmed
-            logging.info(f"Background color setting updated to: {new_color}")
+    def handle_background_applied(
+        self, h_float: float, s_float: float, l_float: float, a_float: float
+    ) -> None:
+        """Handles the final background color applied from settings dialog (received as 0-1 floats)."""
+        # Convert received 0-1 floats to CSS format for storage and saving
+        new_color_css = (
+            round(h_float * 359),
+            round(s_float * 100),
+            round(l_float * 100),
+            a_float,
+        )
+        if self._background_color_hsla != new_color_css:
+            self._background_color_hsla = new_color_css  # Store in CSS format
+            self.save_settings()  # Save all settings (will use CSS format)
+            logging.info(
+                f"Background color setting updated to (CSS format): {new_color_css}"
+            )
             # The main window background is already updated via the preview signal
 
     @Slot(bool)
@@ -260,11 +366,11 @@ class AppController(QObject):
         """Handles the startup toggle from settings dialog."""
         if self._start_with_windows != enabled:
             self._start_with_windows = enabled
-            self.save_settings() # Save all settings when startup flag changes
+            self.save_settings()  # Save all settings when startup flag changes
             logging.info(f"Start with Windows setting updated to: {enabled}")
             # TODO: Implement the actual logic to add/remove from startup
             # This usually involves platform-specific code (e.g., Windows Registry)
-            self._update_startup_registry(enabled) # Placeholder for registry logic
+            self._update_startup_registry(enabled)  # Placeholder for registry logic
 
     def _update_startup_registry(self, enable: bool) -> None:
         """Placeholder for platform-specific startup logic (e.g., Windows Registry)."""

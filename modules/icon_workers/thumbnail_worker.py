@@ -9,8 +9,8 @@ from PySide6.QtGui import QIcon, QImageReader, QPixmap
 from ..icon_validators import ValidatedPathInfo
 from .base_worker import BaseIconWorker
 
-# Consider making this configurable later
-DEFAULT_THUMBNAIL_SIZE = QSize(64, 64)
+# DEFAULT_THUMBNAIL_SIZE is removed, will be passed via constructor
+
 # Common image file extensions (case-insensitive)
 SUPPORTED_IMAGE_EXTENSIONS = {
     ".png", ".jpg", ".jpeg", ".bmp", ".gif", ".tif", ".tiff", ".webp",
@@ -21,7 +21,13 @@ class ThumbnailWorker(BaseIconWorker):
     Generates thumbnail icons for image files.
     """
 
-    def __init__(self, target_size: QSize = DEFAULT_THUMBNAIL_SIZE):
+    def __init__(self, target_size: QSize):
+        """
+        Initializes the worker with the target thumbnail size.
+
+        Args:
+            target_size: The QSize for the generated thumbnails.
+        """
         self.target_size = target_size
         # QImageReader supports many formats out of the box
 

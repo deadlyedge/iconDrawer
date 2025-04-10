@@ -43,7 +43,25 @@ class MainWindow(QMainWindow):
         from modules.controller import AppController
 
         self.controller = AppController(self)
-        self._connect_signals()
+
+        # --- Create DrawerContentWidget *after* controller exists ---
+        if not self.controller:
+             # This should ideally not happen if AppController init succeeds
+             logging.critical("Controller failed to initialize before creating DrawerContentWidget!")
+             # Handle this critical error appropriately, maybe exit or show error message
+             # For now, we might skip creating drawerContent or create a dummy one
+             self.drawerContent = None # Explicitly set to None
+        else:
+             # Pass the controller and the central widget container
+             self.drawerContent = DrawerContentWidget(self.controller, self._central_widget_container)
+             self.drawerContent.setObjectName("drawerContent")
+             self.drawerContent.setVisible(False)
+             self.drawerContent.setMinimumSize(300, 200)
+             # Ensure it's positioned correctly initially (might need adjustment if window size changes)
+             self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
+
+
+        self._connect_signals() # Connect signals *after* drawerContent is created
         self._create_tray_icon()  # Create tray icon and menu
 
         # Hide the window initially, show only the tray icon
@@ -101,13 +119,10 @@ class MainWindow(QMainWindow):
         mainLayout.addWidget(self.leftPanel, 0, alignment=Qt.AlignmentFlag.AlignTop)
 
     def _setup_right_panel(self) -> None:
-        """Creates and configures the right content panel, parented to central widget."""
-        # Pass the renamed container widget as the parent
-        self.drawerContent = DrawerContentWidget(self._central_widget_container)
-        self.drawerContent.setObjectName("drawerContent")
-        self.drawerContent.setVisible(False)
-        self.drawerContent.setMinimumSize(300, 200)
-
+        """Prepares variables related to the right content panel."""
+        # DrawerContentWidget creation moved to __init__ after controller exists.
+        # Initialize attribute to None here for clarity
+        self.drawerContent: Optional[DrawerContentWidget] = None
         self.content_spacing = 5
 
     def _connect_signals(self) -> None:
@@ -133,16 +148,19 @@ class MainWindow(QMainWindow):
             self.controller.handle_window_drag_finished
         )  # Connect drag finished
 
-        # DrawerContentWidget signals
-        self.drawerContent.closeRequested.connect(
-            self.controller.handle_content_close_requested
-        )
-        self.drawerContent.resizeFinished.connect(
-            self.controller.handle_content_resize_finished
-        )
-        self.drawerContent.sizeChanged.connect(
-            self._handle_content_size_changed
-        )  # Connect size changed signal
+        # DrawerContentWidget signals (check if drawerContent exists)
+        if self.drawerContent:
+            self.drawerContent.closeRequested.connect(
+                self.controller.handle_content_close_requested
+            )
+            self.drawerContent.resizeFinished.connect(
+                self.controller.handle_content_resize_finished
+            )
+            self.drawerContent.sizeChanged.connect(
+                self._handle_content_size_changed
+            )  # Connect size changed signal
+        else:
+            logging.error("DrawerContentWidget is None, cannot connect its signals.")
 
         # MainWindow signal
         self.windowMoved.connect(self.controller.update_window_position)
@@ -178,6 +196,11 @@ class MainWindow(QMainWindow):
         if not folder_path:
             logging.error(f"Cannot show content for drawer '{drawer_data.get('name')}' - path missing.")
             return
+        
+        # Ensure drawerContent exists before proceeding
+        if not self.drawerContent:
+            logging.error("Cannot show drawer content: DrawerContentWidget is None.")
+            return
 
         # 1. Calculate required window size
         required_window_width = (
@@ -201,23 +224,24 @@ class MainWindow(QMainWindow):
         ):
             self.resize(required_window_width, required_window_height)
 
-        # 3. Resize and position content widget
-        self.drawerContent.resize(target_size)
-        # Ensure positioning happens after potential window resize
-        self.drawerContent.move(
-            self.leftPanel.width() + self.content_spacing, 0
-        )  # Align top
+        # 3. Resize and position content widget (check existence)
+        if self.drawerContent:
+            self.drawerContent.resize(target_size)
+            # Ensure positioning happens after potential window resize
+            self.drawerContent.move(
+                self.leftPanel.width() + self.content_spacing, 0
+            )  # Align top
 
-        # 4. Update content
-        self.drawerContent.update_content(folder_path)  # Pass only the path
+            # 4. Update content
+            self.drawerContent.update_content(folder_path)  # Pass only the path
 
-        # 5. Make visible
-        self.drawerContent.setVisible(True)
-        self.drawerContent.raise_()  # Ensure it's on top if overlapping somehow
+            # 5. Make visible
+            self.drawerContent.setVisible(True)
+            self.drawerContent.raise_()  # Ensure it's on top if overlapping somehow
 
     def hide_drawer_content(self) -> None:
         """Hides the content widget and resizes the main window."""
-        if self.drawerContent.isVisible():
+        if self.drawerContent and self.drawerContent.isVisible():
             self.drawerContent.setVisible(False)
             # Resize window back to fit only the left panel
             # Use fixed size of leftPanel for reliable sizing
@@ -233,7 +257,9 @@ class MainWindow(QMainWindow):
 
     def get_drawer_content_size(self) -> QSize:
         """Returns the current size of the drawer content widget."""
-        return self.drawerContent.size()
+        if self.drawerContent:
+            return self.drawerContent.size()
+        return QSize(0, 0) # Return default/invalid size if no content widget
 
     def get_current_position(self) -> QPoint:
         """Returns the current top-left position of the main window."""
@@ -280,10 +306,21 @@ class MainWindow(QMainWindow):
         # self.setWindowOpacity(a) # This affects the whole window including contents
 
     def apply_initial_background(self) -> None:
-        """Loads initial background color from settings and applies it."""
+        """Loads initial background color (CSS format) from settings, converts it, and applies it."""
         if self.controller and self.controller.settings_manager:
-            h, s, l, a = self.controller.settings_manager.get_background_color_hsla()
-            self.set_background_color(h, s, l, a)
+            # Get color in CSS format (H:0-359, S:0-100, L:0-100, A:0.0-1.0)
+            h_css, s_css, l_css, a_float = self.controller.settings_manager.get_background_color_hsla()
+            # Convert to 0.0-1.0 floats for the set_background_color slot
+            h_float = h_css / 359.0
+            s_float = s_css / 100.0
+            l_float = l_css / 100.0
+            # Ensure floats are valid
+            h_float = max(0.0, min(1.0, h_float))
+            s_float = max(0.0, min(1.0, s_float))
+            l_float = max(0.0, min(1.0, l_float))
+            a_float = max(0.0, min(1.0, a_float))
+            # Call the slot with 0.0-1.0 floats
+            self.set_background_color(h_float, s_float, l_float, a_float)
         else:
             logging.warning("Controller or SettingsManager not ready for initial background application.")
 
@@ -349,8 +386,9 @@ class MainWindow(QMainWindow):
 
     def _handle_content_size_changed(self, new_content_size: QSize) -> None:
         """Handles the sizeChanged signal from DrawerContentWidget."""
-        if not self.drawerContent.isVisible():
-            return  # Don't resize if the content widget isn't visible
+        # Check if drawerContent exists and is visible
+        if not self.drawerContent or not self.drawerContent.isVisible():
+            return  # Don't resize if the content widget isn't visible or doesn't exist
 
         # Calculate required window size based on the new content size
         required_window_width = (
@@ -363,7 +401,8 @@ class MainWindow(QMainWindow):
 
         # Ensure content widget is still positioned correctly after potential window resize
         # (might not be strictly necessary if layout handles it, but good for robustness)
-        self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
+        if self.drawerContent:
+             self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
 
     # --- Event Overrides ---
 

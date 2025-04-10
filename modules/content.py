@@ -20,14 +20,18 @@ from PySide6.QtGui import (
     QPaintEvent,  # Keep QPaintEvent import
 )
 from PySide6.QtCore import Qt, QSize, QUrl, Signal
-from typing import Optional, Callable
+from typing import Optional, Callable, TYPE_CHECKING # Import TYPE_CHECKING
 
 # Import refactored functions and necessary classes
 from .custom_size_grip import CustomSizeGrip
-from .icon_utils import get_icon_for_path
+from .icon_utils import get_icon_for_path # Keep this for file items
 
 from .content_utils import calculate_available_label_width
 from .content_utils import truncate_text  # Keep truncate_text for file names
+
+# Forward declare AppController for type hints
+if TYPE_CHECKING:
+    from .controller import AppController
 
 
 class FileIconWidget(QWidget):
@@ -84,11 +88,13 @@ class DrawerContentWidget(QWidget):
     sizeChanged = Signal(QSize)
     resizeFinished = Signal()
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    # Modify __init__ to accept the controller
+    def __init__(self, controller: "AppController", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+        self.controller = controller # Store controller reference
         self.current_folder = ""
         # Initialize first
-        self.icon_size = QSize(96, 96)
+        self.icon_size = QSize(96, 96) # Keep this for item icons for now
         self.item_size = (100, 120)
         self.items = []
 
@@ -169,9 +175,13 @@ class DrawerContentWidget(QWidget):
         folder_layout.setContentsMargins(0, 0, 0, 0)
 
         self.folder_icon_label = QLabel(self.folder_container)
-        self.folder_icon_label.setPixmap(
-            QIcon("asset/icons/folder_icon.png").pixmap(16)
-        )
+        # Use icon_provider via controller to get the folder icon, with fallback
+        folder_icon = QIcon() # Default empty icon
+        if self.controller and self.controller.icon_provider:
+            folder_icon = self.controller.icon_provider.get_folder_icon()
+        else:
+            logging.error("Icon provider not available in DrawerContentWidget, using empty icon for folder.")
+        self.folder_icon_label.setPixmap(folder_icon.pixmap(16)) # Use 16px size
         folder_layout.addWidget(self.folder_icon_label)  # Add to inner layout
 
         self.folder_label = QLabel(

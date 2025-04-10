@@ -12,28 +12,43 @@
       "name": "Netch",
       "path": "D:\\users\\Desktop\\Netch",
       "size": {
-        "width": 387,
-        "height": 389
+        "width": 386,
+        "height": 402
       }
     },
     {
       "name": "mkvtoolnix",
       "path": "D:\\users\\Desktop\\mkvtoolnix",
       "size": {
-        "width": 647,
-        "height": 519
+        "width": 644,
+        "height": 514
+      }
+    },
+    {
+      "name": "DaVinci Resolve",
+      "path": "C:\\Users\\xdrea\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Blackmagic Design\\DaVinci Resolve",
+      "size": {
+        "width": 640,
+        "height": 480
       }
     }
   ],
   "window_position": {
-    "x": 611,
-    "y": 308
+    "x": 360,
+    "y": 363
   },
   "background_color_hsla": [
-    0.5877437325905293,
-    0.51,
-    0.4,
-    0.78
+    189,
+    89,
+    23,
+    0.71
   ],
-  "start_with_windows": true
+  "start_with_windows": true,
+  "default_icon_folder_path": "asset/icons/folder_icon.png",
+  "default_icon_file_theme": "text-x-generic",
+  "default_icon_unknown_theme": "unknown",
+  "thumbnail_size": {
+    "width": 64,
+    "height": 64
+  }
 }
