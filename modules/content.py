@@ -1,7 +1,13 @@
 import os
 import shutil
-import logging # Already imported, ensure it stays
-from typing import Optional, Callable, TYPE_CHECKING, List, Dict # Ensure List, Dict are imported
+import logging  # Already imported, ensure it stays
+from typing import (
+    Optional,
+    Callable,
+    TYPE_CHECKING,
+    List,
+    Dict,
+)  # Ensure List, Dict are imported
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -14,10 +20,11 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
 )
+
 # logging is imported above
 from PySide6.QtGui import (
     QIcon,
-    QPixmap, # Add QPixmap
+    QPixmap,  # Add QPixmap
     QDesktopServices,
     QFontMetrics,
     QResizeEvent,
@@ -33,15 +40,16 @@ from PySide6.QtCore import (
     QSize,
     QUrl,
     Signal,
-    QObject,      # Add QObject
-    QRunnable,    # Add QRunnable
+    QObject,  # Add QObject
+    QRunnable,  # Add QRunnable
     QThreadPool,  # Add QThreadPool
-    Slot,         # Add Slot
+    Slot,  # Add Slot
 )
 # TYPE_CHECKING is imported above
 
 # Import refactored functions and necessary classes
 from .custom_size_grip import CustomSizeGrip
+
 # We will call get_icon_for_path from a worker thread
 from .icon_utils import get_icon_for_path
 from .content_utils import calculate_available_label_width
@@ -49,22 +57,28 @@ from .content_utils import truncate_text  # Keep truncate_text for file names
 
 # Forward declare AppController and FileInfo for type hints
 if TYPE_CHECKING:
-    from .controller import AppController, FileInfo # Add FileInfo
+    from .controller import AppController, FileInfo  # Add FileInfo
 
 
 # --- Icon Loading Worker ---
 
+
 class IconWorkerSignals(QObject):
     """Defines signals for the icon loading worker."""
-    icon_loaded = Signal(QWidget, QIcon) # widget instance, loaded icon
-    error = Signal(str, str) # file_path, error message
+
+    icon_loaded = Signal(QWidget, QIcon)  # widget instance, loaded icon
+    error = Signal(str, str)  # file_path, error message
+
 
 class IconLoadWorker(QRunnable):
     """Worker thread to load an icon for a specific file path."""
-    def __init__(self, file_path: str, target_widget: QWidget, signals: IconWorkerSignals):
+
+    def __init__(
+        self, file_path: str, target_widget: QWidget, signals: IconWorkerSignals
+    ):
         super().__init__()
         self.file_path = file_path
-        self.target_widget = target_widget # The FileIconWidget instance
+        self.target_widget = target_widget  # The FileIconWidget instance
         self.signals = signals
 
     @Slot()
@@ -77,9 +91,9 @@ class IconLoadWorker(QRunnable):
                 self.signals.icon_loaded.emit(self.target_widget, icon)
             else:
                 # Handle case where icon loading returns None (e.g., file not found during load)
-                 logging.warning(f"Icon loading returned None for: {self.file_path}")
-                 # Optionally emit an error or a default icon signal
-                 # self.signals.error.emit(self.file_path, "Icon could not be loaded")
+                logging.warning(f"Icon loading returned None for: {self.file_path}")
+                # Optionally emit an error or a default icon signal
+                # self.signals.error.emit(self.file_path, "Icon could not be loaded")
         except Exception as e:
             logging.error(f"Error loading icon for {self.file_path}: {e}")
             self.signals.error.emit(self.file_path, str(e))
@@ -89,12 +103,15 @@ class FileIconWidget(QWidget):
     """
     用于显示文件图标和文件名的部件
     """
+
     # Add is_dir and icon_label
-    def __init__(self, file_path: str, is_dir: bool, parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self, file_path: str, is_dir: bool, parent: Optional[QWidget] = None
+    ) -> None:
         super().__init__(parent)
         self.file_path = file_path
         self.is_dir = is_dir
-        self.icon_label: Optional[QLabel] = None # To hold the icon QLabel
+        self.icon_label: Optional[QLabel] = None  # To hold the icon QLabel
 
         self.visual_container = QWidget(self)
         self.visual_container.setProperty("isVisualContainer", True)
@@ -104,17 +121,23 @@ class FileIconWidget(QWidget):
         layout.addWidget(self.visual_container)
 
         self.content_layout = QVBoxLayout(self.visual_container)
-        self.content_layout.setContentsMargins(0, 5, 0, 5) # Keep margins
-        self.content_layout.setSpacing(2) # Keep spacing
+        self.content_layout.setContentsMargins(0, 5, 0, 5)  # Keep margins
+        self.content_layout.setSpacing(2)  # Keep spacing
 
     def set_icon(self, icon: QIcon, icon_size: QSize):
         """Sets the icon pixmap on the label."""
         if self.icon_label:
             pixmap = icon.pixmap(icon_size)
             # Scale pixmap if needed (same logic as in _create_file_item)
-            if (pixmap.width() > icon_size.width() or
-                    pixmap.height() > icon_size.height()):
-                pixmap = pixmap.scaled(icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            if (
+                pixmap.width() > icon_size.width()
+                or pixmap.height() > icon_size.height()
+            ):
+                pixmap = pixmap.scaled(
+                    icon_size,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
             self.icon_label.setPixmap(pixmap)
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
@@ -160,10 +183,10 @@ class DrawerContentWidget(QWidget):
         self.setAcceptDrops(True)
         self.current_folder = ""
         # Initialize first
-        self.icon_size = QSize(96, 96) # Restore original icon size
-        self.item_size = (100, 120) # Restore original item size
-        self.items: List[FileIconWidget] = [] # Type hint items
-        self.icon_load_pool = QThreadPool() # Thread pool for icon loading
+        self.icon_size = QSize(96, 96)  # Restore original icon size
+        self.item_size = (100, 120)  # Restore original item size
+        self.items: List[FileIconWidget] = []  # Type hint items
+        self.icon_load_pool = QThreadPool()  # Thread pool for icon loading
         self.placeholder_folder_icon: Optional[QIcon] = None
         self.placeholder_file_icon: Optional[QIcon] = None
 
@@ -183,20 +206,23 @@ class DrawerContentWidget(QWidget):
 
         # Now create the UI elements
         self._init_main_container()
-        self._load_placeholder_icons() # Load placeholders after controller is set
+        self._load_placeholder_icons()  # Load placeholders after controller is set
 
     def _load_placeholder_icons(self):
         """Load placeholder icons using the controller's provider."""
         if self.controller and self.controller.icon_provider:
-            self.placeholder_folder_icon = self.controller.icon_provider.get_folder_icon()
+            self.placeholder_folder_icon = (
+                self.controller.icon_provider.get_folder_icon()
+            )
             self.placeholder_file_icon = self.controller.icon_provider.get_file_icon()
             # Add fallback for unknown?
         else:
-            logging.warning("Icon provider not available, cannot load placeholder icons.")
+            logging.warning(
+                "Icon provider not available, cannot load placeholder icons."
+            )
             # Use default QIcons or load from file as fallback?
             self.placeholder_folder_icon = QIcon()
             self.placeholder_file_icon = QIcon()
-
 
     def _init_main_container(self) -> None:
         """
@@ -300,7 +326,7 @@ class DrawerContentWidget(QWidget):
         """
         self.current_folder = folder_path
         if self.folder_label:
-            self.folder_label.setText(folder_path) # Show full path initially
+            self.folder_label.setText(folder_path)  # Show full path initially
             self.folder_label.setToolTip(folder_path)
         # Clear grid first
         self.clear_grid()
@@ -321,46 +347,52 @@ class DrawerContentWidget(QWidget):
             loading_label = QLabel("正在加载...")
             loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             if self.grid_layout:
-                 self.grid_layout.addWidget(loading_label, 0, 0)
-            return # Or maybe disable interaction?
+                self.grid_layout.addWidget(loading_label, 0, 0)
+            return  # Or maybe disable interaction?
 
         if not preloaded_list:
-             # Empty folder or error during preload
-             logging.info(f"Preloaded list for {folder_path} is empty.")
-             # Update folder label elided text even for empty folders
-             self._update_folder_label_elided_text()
-             return # Grid is already cleared
+            # Empty folder or error during preload
+            logging.info(f"Preloaded list for {folder_path} is empty.")
+            # Update folder label elided text even for empty folders
+            self._update_folder_label_elided_text()
+            return  # Grid is already cleared
 
         # --- Populate with Placeholders ---
         try:
             for file_info in preloaded_list:
                 # Use placeholder icons initially
-                placeholder_icon = self.placeholder_folder_icon if file_info.is_dir else self.placeholder_file_icon
-                if not placeholder_icon: placeholder_icon = QIcon() # Fallback
+                placeholder_icon = (
+                    self.placeholder_folder_icon
+                    if file_info.is_dir
+                    else self.placeholder_file_icon
+                )
+                if not placeholder_icon:
+                    placeholder_icon = QIcon()  # Fallback
 
                 container_widget = self._create_file_item_placeholder(
                     file_info, placeholder_icon
                 )
                 self.items.append(container_widget)
 
-            self.relayout_grid() # Layout with placeholders
-            self._update_folder_label_elided_text() # Update label after layout
+            self.relayout_grid()  # Layout with placeholders
+            self._update_folder_label_elided_text()  # Update label after layout
 
             # --- Start Async Icon Loading ---
             self._start_async_icon_loading()
 
-        except Exception as e: # Catch potential errors during item creation
+        except Exception as e:  # Catch potential errors during item creation
             logging.error(f"Error creating file items for {folder_path}: {e}")
             QMessageBox.critical(self, "错误", f"创建文件项时出错: {e!s}")
-
 
     def _start_async_icon_loading(self):
         """Starts background tasks to load real icons for visible items."""
         if not self.items:
             return
-        logging.debug(f"Starting async icon load for {len(self.items)} items in {self.current_folder}")
+        logging.debug(
+            f"Starting async icon load for {len(self.items)} items in {self.current_folder}"
+        )
         for item_widget in self.items:
-            if isinstance(item_widget, FileIconWidget): # Ensure it's the right type
+            if isinstance(item_widget, FileIconWidget):  # Ensure it's the right type
                 signals = IconWorkerSignals()
                 # Connect signal to the slot *before* starting worker
                 signals.icon_loaded.connect(self._on_icon_loaded)
@@ -373,14 +405,15 @@ class DrawerContentWidget(QWidget):
         """Slot to receive loaded icons and update the widget."""
         # Check if the widget still exists and belongs to the current view
         if isinstance(widget, FileIconWidget) and widget in self.items:
-             # Check if the current_folder hasn't changed since the task started
-             if os.path.dirname(widget.file_path) == self.current_folder:
-                 widget.set_icon(icon, self.icon_size)
-             else:
-                 logging.debug(f"Ignoring loaded icon for {widget.file_path} as folder changed.")
+            # Check if the current_folder hasn't changed since the task started
+            if os.path.dirname(widget.file_path) == self.current_folder:
+                widget.set_icon(icon, self.icon_size)
+            else:
+                logging.debug(
+                    f"Ignoring loaded icon for {widget.file_path} as folder changed."
+                )
         else:
-             logging.debug(f"Ignoring loaded icon for widget not found or invalid type.")
-
+            logging.debug(f"Ignoring loaded icon for widget not found or invalid type.")
 
     @Slot(str, str)
     def _on_icon_load_error(self, file_path: str, error_message: str):
@@ -389,7 +422,6 @@ class DrawerContentWidget(QWidget):
         # Or just log the error.
         logging.warning(f"Failed to load icon for {file_path}: {error_message}")
         # Optionally update the widget with an 'error' icon?
-
 
     def open_current_folder(self) -> None:
         """
@@ -413,24 +445,28 @@ class DrawerContentWidget(QWidget):
         icon_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         # Set placeholder pixmap
         pixmap = placeholder_icon.pixmap(self.icon_size)
-        if (pixmap.width() > self.icon_size.width() or
-                pixmap.height() > self.icon_size.height()):
-            pixmap = pixmap.scaled(self.icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        if (
+            pixmap.width() > self.icon_size.width()
+            or pixmap.height() > self.icon_size.height()
+        ):
+            pixmap = pixmap.scaled(
+                self.icon_size,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
         icon_label.setPixmap(pixmap)
         icon_label.setStyleSheet("background-color: transparent;")
-        container_widget.icon_label = icon_label # Store reference in widget
+        container_widget.icon_label = icon_label  # Store reference in widget
 
         # --- Text Label ---
         text_label = QLabel(file_info.name)
         text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         text_label.setWordWrap(True)
-        text_available_width = self.item_size[0] - 10 # Keep padding
+        text_available_width = self.item_size[0] - 10  # Keep padding
         text_label.setMinimumWidth(text_available_width)
-        display_text = truncate_text(
-            file_info.name, text_label, text_available_width
-        )
+        display_text = truncate_text(file_info.name, text_label, text_available_width)
         text_label.setText(display_text)
-        text_label.setToolTip(file_info.name) # Tooltip is the name
+        text_label.setToolTip(file_info.name)  # Tooltip is the name
         text_label.setStyleSheet("background-color: transparent;")
 
         # --- Add to Layout ---
@@ -441,7 +477,6 @@ class DrawerContentWidget(QWidget):
             text_label, 0, Qt.AlignmentFlag.AlignCenter
         )
         return container_widget
-
 
     def relayout_grid(self) -> None:
         """

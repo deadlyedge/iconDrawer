@@ -23,6 +23,7 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
+
 # --- Preloading Structures ---
 class FileInfo(NamedTuple):
     """Simple structure to hold basic file info for preloading."""
@@ -266,16 +267,14 @@ class AppController(QObject):
             if path_str and Path(path_str).is_dir():
                 self._start_single_drawer_preload(path_str)
             elif path_str:
-                logging.warning(
-                    f"Skipping preload for invalid path: {path_str}"
-                )
+                logging.warning(f"Skipping preload for invalid path: {path_str}")
 
     def _start_single_drawer_preload(self, drawer_path: str) -> None:
         """Starts the preloading worker for a single drawer path."""
         if drawer_path in self._preloaded_file_lists:
-             # Optional: Could force reload here if needed, or just log
-             logging.debug(f"Path {drawer_path} already preloaded or pending.")
-             # return # If we don't want to re-trigger
+            # Optional: Could force reload here if needed, or just log
+            logging.debug(f"Path {drawer_path} already preloaded or pending.")
+            # return # If we don't want to re-trigger
 
         logging.debug(f"Queueing preload for: {drawer_path}")
         signals = WorkerSignals()
@@ -288,20 +287,16 @@ class AppController(QObject):
     @Slot(str, list)
     def _on_preload_finished(self, drawer_path: str, file_list: List[FileInfo]):
         """Slot to receive results from the preload worker."""
-        logging.info(
-            f"Finished preloading {len(file_list)} items for: {drawer_path}"
-        )
+        logging.info(f"Finished preloading {len(file_list)} items for: {drawer_path}")
         self._preloaded_file_lists[drawer_path] = file_list
         # TODO: Optionally, if the drawer is currently visible, trigger an update?
 
     @Slot(str, str)
     def _on_preload_error(self, drawer_path: str, error_message: str):
         """Slot to handle errors from the preload worker."""
-        logging.error(
-            f"Error during preload for {drawer_path}: {error_message}"
-        )
+        logging.error(f"Error during preload for {drawer_path}: {error_message}")
         # Store empty list or None to indicate failure?
-        self._preloaded_file_lists[drawer_path] = [] # Store empty list on error
+        self._preloaded_file_lists[drawer_path] = []  # Store empty list on error
 
     def get_preloaded_file_list(self, drawer_path: str) -> Optional[List[FileInfo]]:
         """Public method to access preloaded data."""
