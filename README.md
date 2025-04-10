@@ -70,8 +70,4 @@ Anyway, one thing is very important: the goal of icon drawer is to manage the de
 
 ## TODOs
 - drag in to copy or move files to drawers
-- settings
-  - color
-  - transparency
-- ~~stay in system tray~~
-- ~~a logo and icons for the app~~
+- bug: icons not listed correctly fit the area untill the drawer is opened again.

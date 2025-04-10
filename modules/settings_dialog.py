@@ -148,7 +148,7 @@ class SettingsDialog(QDialog):
         self.button_box.addButton(QDialogButtonBox.StandardButton.Cancel)
         # Add custom Quit button
         self.quit_button = self.button_box.addButton(
-            "退出程序", QDialogButtonBox.ButtonRole.DestructiveRole
+            "Shutdown APP", QDialogButtonBox.ButtonRole.DestructiveRole
         )
 
         main_layout.addWidget(self.button_box)

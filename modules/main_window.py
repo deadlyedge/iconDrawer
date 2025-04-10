@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
 
     def _setup_window_properties(self) -> None:
         """Sets the main window properties."""
-        self.setWindowTitle("图标抽屉管理器")
+        self.setWindowTitle("iconDrawer")
         # self.setWindowOpacity(0.8)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
@@ -112,7 +112,7 @@ class MainWindow(QMainWindow):
         self.drawerList.setFixedSize(210, 240)
         leftLayout.addWidget(self.drawerList)
 
-        self.addButton = QPushButton("添加抽屉", self.leftPanel)
+        self.addButton = QPushButton("Add Drawer", self.leftPanel)
         self.addButton.setObjectName("addButton")
         leftLayout.addWidget(self.addButton)
 

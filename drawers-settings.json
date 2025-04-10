@@ -34,14 +34,14 @@
     }
   ],
   "window_position": {
-    "x": 158,
-    "y": 183
+    "x": 300,
+    "y": 261
   },
   "background_color_hsla": [
-    17,
-    57,
-    38,
-    0.5
+    188,
+    82,
+    21,
+    0.7
   ],
   "start_with_windows": true,
   "default_icon_folder_path": "asset/icons/folder_icon.png",
