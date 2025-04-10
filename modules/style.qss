@@ -126,7 +126,7 @@ DrawerContentWidget QLabel {
 
 DrawerContentWidget QVBoxLayout {
 	background-color: #005fa3;
-	border-radius: 5px;
+	/* border-radius: 5px; */
 }
 
 DrawerContentWidget QHBoxLayout {
@@ -215,7 +215,7 @@ QDialogButtonBox QPushButton:pressed {
 /* Style for the visual container within FileIconWidget using custom property */
 QWidget[isVisualContainer="true"] {
 	background-color: transparent;
-	border-radius: 5px;
+	border-radius: 0px;
 	padding: 2px;
 }
 

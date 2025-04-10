@@ -259,7 +259,7 @@ class SettingsDialog(QDialog):
         super().reject()
 
     # Optional: Override closeEvent if clicking 'X' should also revert
-    # def closeEvent(self, event):
-    #     """Handles the close event (e.g., clicking the 'X' button)."""
-    #     self.reject() # Treat closing as cancel
-    #     event.accept()
+    def closeEvent(self, event):
+        """Handles the close event (e.g., clicking the 'X' button)."""
+        self.reject()  # Treat closing as cancel
+        event.accept()

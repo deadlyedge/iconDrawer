@@ -1,4 +1,5 @@
 import os
+import shutil
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -18,6 +19,10 @@ from PySide6.QtGui import (
     QResizeEvent,
     QMouseEvent,
     QPaintEvent,  # Keep QPaintEvent import
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
+    QDragLeaveEvent,
 )
 from PySide6.QtCore import Qt, QSize, QUrl, Signal
 from typing import Optional, Callable, TYPE_CHECKING # Import TYPE_CHECKING
@@ -92,6 +97,7 @@ class DrawerContentWidget(QWidget):
     def __init__(self, controller: "AppController", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.controller = controller # Store controller reference
+        self.setAcceptDrops(True)
         self.current_folder = ""
         # Initialize first
         self.icon_size = QSize(96, 96) # Keep this for item icons for now
@@ -153,10 +159,10 @@ class DrawerContentWidget(QWidget):
             Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight,
         )
 
-        container_layout.setRowStretch(0, 0)
-        container_layout.setRowStretch(1, 1)
-        container_layout.setRowStretch(2, 0)
-        container_layout.setColumnStretch(0, 1)
+        # container_layout.setRowStretch(0, 0)
+        # container_layout.setRowStretch(1, 1)
+        # container_layout.setRowStretch(2, 0)
+        # container_layout.setColumnStretch(0, 1)
 
     def _create_header(self) -> QHBoxLayout:
         """
@@ -396,8 +402,50 @@ class DrawerContentWidget(QWidget):
             self.folder_label.setToolTip(self.current_folder)
 
         except Exception as e:
-            # Consider using logging
             logging.error(f"Error updating folder label text: {e}") # Use logging instead of print
             if self.folder_label:
                 self.folder_label.setText("...")  # Fallback on error
                 self.folder_label.setToolTip(self.current_folder)  # Still show tooltip
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        if event.mimeData().hasUrls() and self.scroll_area:
+            if self.scroll_area.geometry().contains(event.pos()):
+                self.scroll_area.setStyleSheet("border: 2px solid orange;")
+            else:
+                self.scroll_area.setStyleSheet("")
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragLeaveEvent(self, event: QDragLeaveEvent) -> None:
+        if self.scroll_area:
+            self.scroll_area.setStyleSheet("")
+        event.accept()
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        if self.scroll_area:
+            self.scroll_area.setStyleSheet("")
+        if event.mimeData().hasUrls() and self.current_folder:
+            for url in event.mimeData().urls():
+                file_path = url.toLocalFile()
+                if os.path.isfile(file_path):
+                    src_drive = os.path.splitdrive(file_path)[0].upper()
+                    dest_drive = os.path.splitdrive(self.current_folder)[0].upper()
+                    dest_path = os.path.join(self.current_folder, os.path.basename(file_path))
+                    try:
+                        if src_drive == dest_drive:
+                            shutil.move(file_path, dest_path)
+                        else:
+                            shutil.copy2(file_path, dest_path)
+                    except Exception as e:
+                        logging.error(f"Error transferring file {file_path}: {e}")
+            self.update_content(self.current_folder)
+            event.acceptProposedAction()
+        else:
+            event.ignore()
