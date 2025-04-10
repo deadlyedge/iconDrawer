@@ -1,5 +1,14 @@
-from typing import List, Optional, TYPE_CHECKING, Tuple
-from PySide6.QtCore import QObject, QPoint, QSize, Slot
+import os
+from typing import List, Optional, TYPE_CHECKING, Tuple, NamedTuple
+from PySide6.QtCore import (
+    QObject,
+    QPoint,
+    QSize,
+    Slot,
+    QThreadPool,
+    QRunnable,
+    Signal,
+)
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 from modules.settings_manager import SettingsManager, DrawerDict
 from pathlib import Path
@@ -13,6 +22,54 @@ from modules.icon_provider import DefaultIconProvider
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
+
+# --- Preloading Structures ---
+class FileInfo(NamedTuple):
+    """Simple structure to hold basic file info for preloading."""
+
+    name: str
+    path: str
+    is_dir: bool
+
+
+class WorkerSignals(QObject):
+    """Defines signals available from a running worker thread."""
+
+    finished = Signal(str, list)  # drawer_path, list[FileInfo]
+    error = Signal(str, str)  # drawer_path, error_message
+
+
+class PreloadWorker(QRunnable):
+    """Worker thread for preloading file list of a single drawer."""
+
+    def __init__(self, drawer_path: str, signals: WorkerSignals):
+        super().__init__()
+        self.drawer_path = drawer_path
+        self.signals = signals
+
+    @Slot()
+    def run(self):
+        """Execute the preloading task."""
+        file_list = []
+        try:
+            for entry in os.scandir(self.drawer_path):
+                try:
+                    # Basic info is usually fast, avoid stat() unless needed later
+                    file_list.append(
+                        FileInfo(
+                            name=entry.name, path=entry.path, is_dir=entry.is_dir()
+                        )
+                    )
+                except OSError as e:
+                    # Log error for specific entry but continue scanning others
+                    logging.warning(
+                        f"Could not access entry {entry.name} in {self.drawer_path}: {e}"
+                    )
+            self.signals.finished.emit(self.drawer_path, file_list)
+        except OSError as e:
+            logging.error(f"Error scanning drawer {self.drawer_path}: {e}")
+            self.signals.error.emit(self.drawer_path, str(e))
+
 
 # Use TYPE_CHECKING to avoid circular imports for type hints
 if TYPE_CHECKING:
@@ -61,6 +118,12 @@ class AppController(QObject):
         self._locked_item_data: Optional[DrawerDict] = None
         # Add icon_provider attribute
         self.icon_provider: Optional[DefaultIconProvider] = None
+        # --- Preloading Attributes ---
+        self.threadpool = QThreadPool()
+        logging.info(
+            f"Multithreading with maximum {self.threadpool.maxThreadCount()} threads."
+        )
+        self._preloaded_file_lists: dict[str, List[FileInfo]] = {}
 
         # Explicitly initialize icon components here
         modules.icon_utils._initialize_icon_components()
@@ -72,6 +135,7 @@ class AppController(QObject):
             # For now, log the critical error. Downstream code needs to handle None.
 
         self._load_initial_data()
+        self._start_preloading_drawers()  # Start preloading after initial data load
 
     # --- Data Management ---
 
@@ -104,6 +168,7 @@ class AppController(QObject):
         if self._window_position:
             self._main_view.set_initial_position(self._window_position)
         # Initial background is applied by MainWindow itself after controller is ready
+        # Note: Preloading starts *after* this method finishes
 
     def save_settings(self) -> None:
         """Saves the current application state (drawers and window position)."""
@@ -154,6 +219,8 @@ class AppController(QObject):
                 self._drawers_data.append(new_drawer_data)
                 self._main_view.add_drawer_item(new_drawer_data)
                 self.save_settings()
+                # Also preload the newly added drawer
+                self._start_single_drawer_preload(folder_path_str)
             else:
                 # Handle invalid folder selection
                 logging.error(
@@ -185,6 +252,60 @@ class AppController(QObject):
             self._window_position = pos
             # Debounce saving or save on specific events like dragFinished
             # self.save_settings() # Avoid saving on every move event
+
+    # --- Preloading Logic ---
+
+    def _start_preloading_drawers(self) -> None:
+        """Starts background preloading for all configured drawers."""
+        logging.info("Starting initial preload for all drawers...")
+        if not self._drawers_data:
+            logging.info("No drawers configured, skipping preload.")
+            return
+        for drawer_data in self._drawers_data:
+            path_str = drawer_data.get("path")
+            if path_str and Path(path_str).is_dir():
+                self._start_single_drawer_preload(path_str)
+            elif path_str:
+                logging.warning(
+                    f"Skipping preload for invalid path: {path_str}"
+                )
+
+    def _start_single_drawer_preload(self, drawer_path: str) -> None:
+        """Starts the preloading worker for a single drawer path."""
+        if drawer_path in self._preloaded_file_lists:
+             # Optional: Could force reload here if needed, or just log
+             logging.debug(f"Path {drawer_path} already preloaded or pending.")
+             # return # If we don't want to re-trigger
+
+        logging.debug(f"Queueing preload for: {drawer_path}")
+        signals = WorkerSignals()
+        signals.finished.connect(self._on_preload_finished)
+        signals.error.connect(self._on_preload_error)
+        worker = PreloadWorker(drawer_path, signals)
+        # Add the worker to the thread pool
+        self.threadpool.start(worker)
+
+    @Slot(str, list)
+    def _on_preload_finished(self, drawer_path: str, file_list: List[FileInfo]):
+        """Slot to receive results from the preload worker."""
+        logging.info(
+            f"Finished preloading {len(file_list)} items for: {drawer_path}"
+        )
+        self._preloaded_file_lists[drawer_path] = file_list
+        # TODO: Optionally, if the drawer is currently visible, trigger an update?
+
+    @Slot(str, str)
+    def _on_preload_error(self, drawer_path: str, error_message: str):
+        """Slot to handle errors from the preload worker."""
+        logging.error(
+            f"Error during preload for {drawer_path}: {error_message}"
+        )
+        # Store empty list or None to indicate failure?
+        self._preloaded_file_lists[drawer_path] = [] # Store empty list on error
+
+    def get_preloaded_file_list(self, drawer_path: str) -> Optional[List[FileInfo]]:
+        """Public method to access preloaded data."""
+        return self._preloaded_file_lists.get(drawer_path)
 
     # --- Slot Handlers for View Signals ---
 
