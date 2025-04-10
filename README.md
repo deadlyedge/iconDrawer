@@ -7,6 +7,8 @@ I've been using Stardock Fences, but I realized that what I really need is a sim
 
 Built with PySide6, this application is a graphical drawer management tool. Users can manage and browse folders (drawers) stored on their computer, displaying the drawer list and drawer content in two separate windows. From an efficiency and functionality perspective, I believe C# and .NET would be better development platforms. However, I'm not familiar with C, so I attempted to implement the basic features using Python. I hope this project inspires developers (ideally, the PowerToys team) to recognize the utility of this feature and create even better products.
 
+Anyway, one thing is very important: the goal of icon drawer is to manage the desktop, and not to mess it up.
+
 ## Main Features
 - **Drawer List Management**
   - Loads drawer information from the configuration file (`drawers.json`).
