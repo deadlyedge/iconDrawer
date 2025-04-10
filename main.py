@@ -2,31 +2,22 @@ import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon # Import QIcon
 from PySide6.QtCore import QFile, QIODevice, QTextStream
-import logging # Import logging
+import logging
 from modules.main_window import MainWindow
+
+# Configure basic logging (adjust level and format as needed for production)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 
 if __name__ == "__main__":
-    # Force logging configuration to DEBUG level and output to stderr
-    log_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    log_handler = logging.StreamHandler(sys.stderr) # Explicitly output to stderr
-    log_handler.setFormatter(log_formatter)
-
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-    # Remove existing handlers if any (to avoid duplicate messages)
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-    root_logger.addHandler(log_handler)
-
-    logging.debug("Application starting with forced DEBUG logging to stderr...")
+    logging.info("Application starting...")
 
     app = QApplication(sys.argv)
 
     # Set Application Icon (same as tray icon)
     app_icon = QIcon("asset/drawer.icon.4.ico")
     if app_icon.isNull():
-        print("Warning: Application icon file not found or invalid.")
+        logging.warning("Application icon file 'asset/drawer.icon.4.ico' not found or invalid.")
     app.setWindowIcon(app_icon)
 
     # Load and apply the stylesheet using QTextStream
@@ -36,11 +27,12 @@ if __name__ == "__main__":
         stylesheet = stream.readAll()
         app.setStyleSheet(stylesheet)
         style_file.close()
+        logging.info("Stylesheet 'modules/style.qss' loaded successfully.")
     else:
-        print(f"Could not open stylesheet file: {style_file.errorString()}")
+        logging.error(f"Could not open stylesheet file 'modules/style.qss': {style_file.errorString()}")
 
     mainWindow = MainWindow()
-    # mainWindow.resize(800, 600) # Initial resize might not be needed if hidden
-    mainWindow.show() # Don't show initially, rely on tray icon
+    # mainWindow.resize(800, 600) # Initial resize might not be needed if hidden - handled by settings?
+    mainWindow.show() # Don't show initially, rely on tray icon to show/hide
     
     sys.exit(app.exec())

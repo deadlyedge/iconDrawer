@@ -93,7 +93,7 @@ class LnkIconWorker(BaseIconWorker):
             # 1. Try explicit icon location from 'data'
             if lnk_data.data and lnk_data.data.icon_location:
                 lnk_icon = try_get_icon(lnk_data.data.icon_location)
-                # if lnk_icon: logging.debug(f"LNK icon found via data.icon_location: {lnk_data.data.icon_location}")
+                if lnk_icon: logging.debug(f"LNK icon found via data.icon_location: {lnk_data.data.icon_location}")
 
             # 2. Try explicit icon location from 'extra' block (expanding vars)
             if (
@@ -105,7 +105,7 @@ class LnkIconWorker(BaseIconWorker):
                 icon_loc_extra = lnk_data.extra.icon_location_block.target_unicode
                 expanded_path = os.path.expandvars(icon_loc_extra)
                 lnk_icon = try_get_icon(expanded_path)
-                # if lnk_icon: logging.debug(f"LNK icon found via extra block: {expanded_path}")
+                if lnk_icon: logging.debug(f"LNK icon found via extra block: {expanded_path}")
 
             # 3. Determine target path if no explicit icon found yet
             if not lnk_icon and lnk_data.data:
@@ -144,11 +144,11 @@ class LnkIconWorker(BaseIconWorker):
         if target_path:
             target_icon = try_get_icon(target_path)
             if target_icon:
-                # logging.debug(f"LNK icon found via target path fallback: {target_path}")
+                logging.debug(f"LNK icon found via target path fallback: {target_path}")
                 return target_icon
-            # else:
-            # logging.debug(f"LNK target path ('{target_path}') did not yield a valid icon.")
+            else:
+                logging.debug(f"LNK target path ('{target_path}') did not yield a valid icon.")
 
         # 6. If no icon found from explicit location or target, return None
-        # logging.debug(f"Could not determine icon from LNK location or target for '{full_path}'.")
+        logging.debug(f"Could not determine icon from LNK location or target for '{full_path}'.")
         return None

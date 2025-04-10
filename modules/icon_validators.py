@@ -1,4 +1,5 @@
 import os
+import logging # Import logging
 from typing import Optional, TypedDict, Literal
 
 # Define a type hint for the validation result
@@ -25,7 +26,7 @@ def validate_path(path: Optional[str]) -> Optional[ValidatedPathInfo]:
         and exists, otherwise None.
     """
     if not isinstance(path, str) or not path:
-        # logging.debug(f"Validation failed: Path is not a valid string or is empty: {path}")
+        logging.debug(f"Validation failed: Path is not a valid string or is empty: {path}")
         return None
 
     path_type: PathType = "unknown"
@@ -41,12 +42,12 @@ def validate_path(path: Optional[str]) -> Optional[ValidatedPathInfo]:
         else:
             # Path exists but is neither file nor directory (e.g., broken symlink)
             # Or path does not exist
-            # logging.debug(f"Validation failed: Path does not exist or is not file/dir: {path}")
+            logging.debug(f"Validation failed: Path does not exist or is not file/dir: {path}")
             return None  # Treat non-existent or non-file/dir as invalid for icon purposes
 
     except OSError as e:
         # Handle potential OS errors during path checking (e.g., permission denied)
-        # logging.warning(f"Validation error for path '{path}': {e}")
+        logging.warning(f"Validation error for path '{path}': {e}")
         return None
 
     return {

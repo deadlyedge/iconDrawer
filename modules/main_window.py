@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication, Slot
 from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent
-# Import QMoveEvent
+import logging # Import logging
 
 from modules.settings_manager import DrawerDict  # Import SettingsManager
 from modules.list import DrawerListWidget
@@ -113,7 +113,7 @@ class MainWindow(QMainWindow):
     def _connect_signals(self) -> None:
         """Connects UI signals to the controller's slots."""
         if not self.controller:
-            print("Error: Controller not initialized during signal connection.")
+            logging.error("Controller not initialized during signal connection.")
             return
 
         # Button signal
@@ -176,9 +176,7 @@ class MainWindow(QMainWindow):
         """Adjusts window size, positions, updates, and shows the content widget."""
         folder_path = drawer_data.get("path")
         if not folder_path:
-            print(
-                f"Error: Cannot show content for drawer '{drawer_data.get('name')}' - path missing."
-            )
+            logging.error(f"Cannot show content for drawer '{drawer_data.get('name')}' - path missing.")
             return
 
         # 1. Calculate required window size
@@ -204,7 +202,6 @@ class MainWindow(QMainWindow):
             self.resize(required_window_width, required_window_height)
 
         # 3. Resize and position content widget
-        # print(f"[show_drawer_content] Resizing content widget to: {target_size}") # DEBUG
         self.drawerContent.resize(target_size)
         # Ensure positioning happens after potential window resize
         self.drawerContent.move(
@@ -236,9 +233,7 @@ class MainWindow(QMainWindow):
 
     def get_drawer_content_size(self) -> QSize:
         """Returns the current size of the drawer content widget."""
-        current_size = self.drawerContent.size()
-        # print(f"[get_drawer_content_size] Returning size: {current_size}") # DEBUG
-        return current_size
+        return self.drawerContent.size()
 
     def get_current_position(self) -> QPoint:
         """Returns the current top-left position of the main window."""
@@ -290,20 +285,18 @@ class MainWindow(QMainWindow):
             h, s, l, a = self.controller.settings_manager.get_background_color_hsla()
             self.set_background_color(h, s, l, a)
         else:
-            print(
-                "Warning: Controller or SettingsManager not ready for initial background."
-            )
+            logging.warning("Controller or SettingsManager not ready for initial background application.")
 
     # --- Tray Icon Methods ---
 
     def _create_tray_icon(self) -> None:
         """Creates the system tray icon and its context menu."""
         self.tray_icon = QSystemTrayIcon(self)
-        icon = QIcon("asset/drawer.icon.4.ico")  # Consider making path configurable
+        icon_path = "asset/drawer.icon.4.ico" # Consider making path configurable
+        icon = QIcon(icon_path)
         if icon.isNull():
-            print("Warning: Tray icon file not found or invalid.")
-            # Fallback icon or handle error
-            # For now, let it proceed, might show a default system icon or nothing
+            logging.warning(f"Tray icon file '{icon_path}' not found or invalid.")
+            # Fallback icon or handle error might be needed
         self.tray_icon.setIcon(icon)
         self.tray_icon.setToolTip("图标抽屉管理器")
 
@@ -366,7 +359,6 @@ class MainWindow(QMainWindow):
         required_window_height = max(self.leftPanel.height(), new_content_size.height())
 
         # Resize the main window
-        # print(f"[DEBUG Main] Content resized to {new_content_size}, resizing window to {required_window_width}x{required_window_height}")
         self.resize(required_window_width, required_window_height)
 
         # Ensure content widget is still positioned correctly after potential window resize
@@ -393,9 +385,7 @@ class MainWindow(QMainWindow):
     def show_settings_dialog(self) -> None:
         """Shows the settings dialog."""
         if not self.controller or not self.controller.settings_manager:
-            print(
-                "Error: Controller or SettingsManager not available for settings dialog."
-            )
+            logging.error("Controller or SettingsManager not available for settings dialog.")
             return
 
         dialog = SettingsDialog(self.controller.settings_manager, self)
@@ -407,7 +397,13 @@ class MainWindow(QMainWindow):
         dialog.backgroundApplied.connect(self.controller.handle_background_applied)
         dialog.startupToggled.connect(self.controller.handle_startup_toggled)
         # 3. Connect Quit signal
-        dialog.quitApplicationRequested.connect(QApplication.instance().quit)
+        # Check if instance exists before connecting quit
+        app_instance = QApplication.instance()
+        if app_instance:
+            dialog.quitApplicationRequested.connect(app_instance.quit)
+        else:
+            logging.error("QApplication instance not found when connecting quit signal.")
+
 
         dialog.exec()
 
@@ -421,7 +417,9 @@ class MainWindow(QMainWindow):
             )
             dialog.startupToggled.disconnect(self.controller.handle_startup_toggled)
             # Disconnect Quit signal
-            dialog.quitApplicationRequested.disconnect(QApplication.instance().quit)
+            app_instance = QApplication.instance()
+            if app_instance:
+                dialog.quitApplicationRequested.disconnect(app_instance.quit)
         except RuntimeError:
             # Signals might already be disconnected if dialog was closed abruptly
             pass

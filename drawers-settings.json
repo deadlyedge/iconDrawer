@@ -5,7 +5,7 @@
       "path": "D:\\users\\Desktop\\3x",
       "size": {
         "width": 604,
-        "height": 547
+        "height": 549
       }
     },
     {
@@ -26,12 +26,12 @@
     }
   ],
   "window_position": {
-    "x": 633,
-    "y": 317
+    "x": 611,
+    "y": 308
   },
   "background_color_hsla": [
     0.5877437325905293,
-    0.0,
+    0.51,
     0.4,
     0.78
   ],

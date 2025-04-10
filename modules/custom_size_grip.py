@@ -35,7 +35,6 @@ class CustomSizeGrip(QWidget):
                 top_level_widget = parent.parentWidget()
                 if top_level_widget:
                     self._start_widget_geo = top_level_widget.geometry()
-                    # print(f"[DEBUG Grip] Press: Start Global Pos: {self._start_mouse_pos}, Start Widget Geo: {self._start_widget_geo}")
             event.accept()
         else:
             super().mousePressEvent(event)
@@ -47,7 +46,6 @@ class CustomSizeGrip(QWidget):
         if self._is_resizing and self._start_mouse_pos and self._start_widget_geo:
             # 计算鼠标移动的增量
             delta = event.globalPosition().toPoint() - self._start_mouse_pos
-            # print(f"[DEBUG Grip] Move: Current Global Pos: {event.globalPosition().toPoint()}, Delta: {delta}")
 
             # 计算新的几何形状
             new_geo = QRect(self._start_widget_geo)
@@ -69,10 +67,9 @@ class CustomSizeGrip(QWidget):
             # 调整父部件（DrawerContentWidget）的大小
             if top_level_widget:
                 top_level_widget.setGeometry(new_geo)
-                # print(f"[DEBUG Grip] Move: Setting Widget Geo: {new_geo}")
 
             # 发出包含增量的信号（如果需要）
-            # self.resized.emit(delta)
+            # self.resized.emit(delta) # Signal currently unused, keep commented
             event.accept()
         else:
             super().mouseMoveEvent(event)
@@ -86,7 +83,6 @@ class CustomSizeGrip(QWidget):
             self._start_mouse_pos = None
             self._start_widget_geo = None
             self.resizeFinished.emit()
-            # print("[DEBUG Grip] Release: Resizing finished.")
             event.accept()
         else:
             super().mouseReleaseEvent(event)
@@ -112,9 +108,5 @@ class CustomSizeGrip(QWidget):
                  # 确保点在对角线附近
                  if (rect.width() - x) + (rect.height() - y) < rect.width() + dot_size:
                      painter.drawEllipse(x, y, dot_size, dot_size)
-
-        # 可选：绘制边框用于调试
-        # painter.setPen(Qt.GlobalColor.red)
-        # painter.drawRect(rect.adjusted(0, 0, -1, -1))
 
         painter.end()

@@ -24,8 +24,6 @@ class ThumbnailWorker(BaseIconWorker):
     def __init__(self, target_size: QSize = DEFAULT_THUMBNAIL_SIZE):
         self.target_size = target_size
         # QImageReader supports many formats out of the box
-        # supported_formats = [bytes(f).decode('ascii').lower() for f in QImageReader.supportedImageFormats()]
-        # logging.debug(f"ThumbnailWorker supported formats (QImageReader): {supported_formats}")
 
     def can_handle(self, path_info: ValidatedPathInfo) -> bool:
         """Checks if the path points to a supported image file."""
@@ -53,7 +51,6 @@ class ThumbnailWorker(BaseIconWorker):
 
             # Set a smaller target size for reading if possible (efficiency)
             # Consider device pixel ratio for high DPI displays later if needed
-            # reader.setScaledSize(self.target_size * QApplication.instance().devicePixelRatio())
             reader.setAutoTransform(True) # Apply EXIF orientation etc.
 
             # Read the image

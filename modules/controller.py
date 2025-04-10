@@ -44,7 +44,6 @@ class AppController(QObject):
         self._window_position = window_pos
         self._background_color_hsla = bg_color
         self._start_with_windows = start_flag
-        # logging.info(f"Loaded initial settings: Pos={window_pos}, BG={bg_color}, Startup={start_flag}")
 
         # Update view components
         self._main_view.populate_drawer_list(self._drawers_data)
@@ -58,7 +57,6 @@ class AppController(QObject):
         current_pos = self._main_view.get_current_position()
         if current_pos:
             self._window_position = current_pos
-        # logging.info(f"Saving data: Drawers={self._drawers_data}, Pos={self._window_position}, BG={self._background_color_hsla}, Startup={self._start_with_windows}")
         self.settings_manager.save_settings(
             drawers=self._drawers_data,
             window_position=self._window_position,
@@ -100,12 +98,9 @@ class AppController(QObject):
                 if drawer.get("size") != new_size:
                     drawer["size"] = new_size # Directly update the QSize object
                     updated = True
-                    # logging.info(f"Updating size for drawer '{drawer_name}' to {new_size}") # DEBUG removed
                 break # Found the drawer, no need to continue loop
         if updated:
             self.save_settings()
-        # else:
-            # logging.warning(f"Could not find drawer '{drawer_name}' to update size.") # Warning removed
 
     def update_window_position(self, pos: QPoint) -> None:
         """Updates the stored window position."""
@@ -170,7 +165,6 @@ class AppController(QObject):
                 self._locked = False
                 self._locked_item_data = None
                 self._main_view.hide_drawer_content()
-                # logging.info("Drawer unlocked")
             else:
                 # Case B: Clicked a different item while locked -> Switch content
                 # --- Save size of the OLD drawer before switching ---
@@ -182,13 +176,11 @@ class AppController(QObject):
                 # --- Switch to the new item ---
                 self._locked_item_data = current_drawer_config if current_drawer_config else drawer_data # Store the latest config
                 self._main_view.show_drawer_content(self._locked_item_data, target_content_size)
-                # logging.info(f"Drawer remains locked, content updated to: {self._locked_item_data.get('name')}")
         else:
             # Case C: Not locked -> Lock and show the selected item
             self._locked = True
             self._locked_item_data = current_drawer_config if current_drawer_config else drawer_data # Store the latest config
             self._main_view.show_drawer_content(self._locked_item_data, target_content_size)
-            # logging.info(f"Drawer locked on: {self._locked_item_data.get('name')}")
 
 
     def handle_selection_cleared(self) -> None:
@@ -198,7 +190,6 @@ class AppController(QObject):
         if not self._locked:
             # Size saving is handled by resize/drag finish signals, no need here.
             self._main_view.hide_drawer_content()
-            # logging.info("Drawer content cleared (selection lost, unlocked)")
         # If it IS locked, selection change doesn't hide it.
 
     def handle_content_close_requested(self) -> None:
@@ -215,7 +206,6 @@ class AppController(QObject):
         self._locked_item_data = None
         self._main_view.hide_drawer_content()
         self._main_view.clear_list_selection() # Ensure list selection is also cleared
-        # logging.info("Drawer content closed and unlocked")
 
     def handle_content_resize_finished(self) -> None:
         """Handles the resize finished signal from the content widget."""
@@ -225,8 +215,6 @@ class AppController(QObject):
             drawer_name = self._locked_item_data.get("name")
             if drawer_name:
                 self.update_drawer_size(drawer_name, current_size) # Save if changed
-            # else:
-                 # logging.warning("Cannot save size on resize finish, locked item has no name.")
 
     def handle_window_drag_finished(self) -> None:
         """Saves settings when window dragging finishes."""
@@ -247,12 +235,10 @@ class AppController(QObject):
                     if drawer.get("name") == drawer_name:
                         if drawer.get("size") != current_size:
                             drawer["size"] = current_size
-                            # logging.info(f"Drawer '{drawer_name}' size updated in memory to {current_size} on window drag finish.")
                         break
 
         # 3. Save settings (includes potentially updated position and size)
         self.save_settings()
-        # logging.info("Window drag finished, settings saved.")
 
 
     def handle_settings_requested(self) -> None:

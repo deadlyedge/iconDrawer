@@ -33,17 +33,17 @@ class FileIconWorker(BaseIconWorker):
         if extension:
             specific_icon = icon_provider.get_icon_for_extension(extension)
             if specific_icon:
-                # logging.debug(f"Using extension-specific default icon for: {extension}")
+                logging.debug(f"Using extension-specific default icon for: {extension}")
                 return specific_icon
 
         # 2. Try loading icon directly from the file path using helper
         # This might work for image files or files with embedded icons recognized by Qt
         std_icon = try_get_icon(full_path)
         if std_icon:
-            # logging.debug(f"Successfully loaded icon directly from file: {full_path}")
+            logging.debug(f"Successfully loaded icon directly from file: {full_path}")
             return std_icon
 
         # 3. If no specific default and direct loading fails, return None
         # The dispatcher will handle falling back to the generic file icon.
-        # logging.debug(f"No specific or direct icon found for file: {full_path}")
+        logging.debug(f"No specific or direct icon found for file: {full_path}")
         return None

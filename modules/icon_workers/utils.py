@@ -19,13 +19,13 @@ def try_get_icon(path: Optional[str]) -> Optional[QIcon]:
             icon_candidate = QIcon(path)
             # Check if the icon is not null (i.e., loading was successful)
             if not icon_candidate.isNull():
-                # logging.debug(f"Successfully loaded icon from: {path}")
+                logging.debug(f"Successfully loaded icon from: {path}")
                 return icon_candidate
-            # else:
-            # logging.debug(f"QIcon is null for path: {path}")
+            else:
+                logging.debug(f"QIcon is null for path: {path}")
         except Exception as e:
             logging.warning(f"Error creating QIcon for path '{path}': {e}")
             pass
-    # else:
-    # logging.debug(f"Icon path invalid or does not exist: {path}")
+    else:
+        logging.debug(f"Icon path invalid or does not exist: {path}")
     return None

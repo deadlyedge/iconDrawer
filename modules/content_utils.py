@@ -1,3 +1,4 @@
+import logging # Import logging
 from PySide6.QtWidgets import QLabel, QHBoxLayout, QWidget, QPushButton # Added QPushButton
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtCore import Qt
@@ -49,8 +50,7 @@ def calculate_available_label_width(container_widget: QWidget, header_layout: QH
     """
     # Restore original calculation:
     if not container_widget or not header_layout or not icon_label or not close_button:
-        # Consider using logging instead of print for warnings
-        # print("[WARN Calc Width] Missing required widgets/layout.")
+        logging.warning("calculate_available_label_width: Missing required widgets/layout.")
         return 100 # Default if widgets are missing
 
     # Get total width available for the header layout
@@ -65,13 +65,11 @@ def calculate_available_label_width(container_widget: QWidget, header_layout: QH
     # Get widths/spacing within the folder_container (which holds the icon and label)
     folder_container = icon_label.parentWidget()
     if not folder_container:
-        # Consider logging
-        # print("[WARN Calc Width] Icon label has no parent widget.")
+        logging.warning("calculate_available_label_width: Icon label has no parent widget.")
         return 100 # Safety check
     folder_layout = folder_container.layout()
     if not folder_layout:
-        # Consider logging
-        # print("[WARN Calc Width] Folder container has no layout.")
+        logging.warning("calculate_available_label_width: Folder container has no layout.")
         return 100 # Safety check
 
     folder_margins = folder_layout.contentsMargins()

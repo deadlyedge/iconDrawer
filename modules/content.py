@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
 )
+import logging # Import logging
 from PySide6.QtGui import (
     QIcon,
     QDesktopServices,
@@ -368,7 +369,6 @@ class DrawerContentWidget(QWidget):
             or not self.folder_icon_label
             or not self.close_button
         ):
-            # print("[DEBUG UpdateLabel] Missing widgets, skipping update.")
             return
 
         try:
@@ -381,19 +381,13 @@ class DrawerContentWidget(QWidget):
             elided_text = fm.elidedText(
                 self.current_folder, Qt.TextElideMode.ElideLeft, available_width
             )
-            # Use the original debug format for comparison
-            # label_width = self.folder_label.width() # Current actual label width (might be small)
-            # container_width = self.folder_container.width() if self.folder_container else 0 # Current container width
-            # print(
-            #     f"[DEBUG _update_folder_label] LabelW={label_width}, ContW={container_width}, AvailW={available_width}, Text='{elided_text}'"
-            # ) # DEBUG using calculated width
             self.folder_label.setText(elided_text)
             # Tooltip should always show the full path
             self.folder_label.setToolTip(self.current_folder)
 
         except Exception as e:
             # Consider using logging
-            # print(f"Error updating folder label text: {e}")
+            logging.error(f"Error updating folder label text: {e}") # Use logging instead of print
             if self.folder_label:
                 self.folder_label.setText("...")  # Fallback on error
                 self.folder_label.setToolTip(self.current_folder)  # Still show tooltip

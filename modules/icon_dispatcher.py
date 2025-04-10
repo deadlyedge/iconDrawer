@@ -79,6 +79,9 @@ class IconDispatcher:
                  # Check available sizes (optional, for debugging)
                  # available_sizes = qt_icon.availableSizes()
                  # logging.debug(f"QFileIconProvider returned icon for '{full_path}'. Available sizes: {available_sizes}")
+                 # Check available sizes (optional, for debugging)
+                 # available_sizes = qt_icon.availableSizes()
+                 # logging.debug(f"QFileIconProvider returned icon for '{full_path}'. Available sizes: {available_sizes}")
                  logging.debug(f"QFileIconProvider succeeded for: {full_path}")
                  return qt_icon
             else:
