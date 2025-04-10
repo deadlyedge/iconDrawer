@@ -251,7 +251,7 @@ class MainWindow(QMainWindow):
         """Shows a dialog to select a folder and returns the path."""
         # Ensure the dialog opens on top of the main window
         folder = QFileDialog.getExistingDirectory(
-            self, "选择文件夹", options=QFileDialog.Option.ShowDirsOnly
+            self, "Select Folder", options=QFileDialog.Option.ShowDirsOnly
         )
         return folder if folder else None
 
@@ -274,7 +274,7 @@ class MainWindow(QMainWindow):
     @Slot(float, float, float, float)
     def set_background_color(self, h: float, s: float, l: float, a: float) -> None:
         """Applies the background color to leftPanel and drawerContent using HSLA values (0.0-1.0)."""
-        # Generate the HSLA color string
+        # 生成 HSLA 颜色字符串
         hsla_color = f"hsla({int(h * 359)}, {int(s * 100)}%, {int(l * 100)}%, {a:.2f})"
 
         # Define the style for both widgets using their object names
@@ -294,16 +294,54 @@ class MainWindow(QMainWindow):
                 border: 1px solid #424242;
             }}
         """
-        # Apply the combined stylesheet to the main window.
+        # --- 新增逻辑 ---
+        # 根据亮度 l (0.0-1.0) 决定字体颜色
+        if l > 0.5:
+            font_color = "#212121"  # 深色字体
+        else:
+            font_color = "#e0e0e0"  # 浅色字体
+        # --- 结束新增逻辑 ---
+
+        # --- 修改样式表生成 ---
+        # 包含背景色和动态字体颜色
+        style = f"""
+            /* 背景色样式 */
+            QWidget#leftPanel {{
+                background-color: {hsla_color};
+                border-top-left-radius: 5px;
+                border-bottom-left-radius: 5px;
+            }}
+            QWidget[isDrawerContentContainer="true"] {{
+                background-color: {hsla_color};
+                border-radius: 5px;
+                border: 1px solid #424242; /* 保留边框 */
+            }}
+
+            /* 动态字体颜色样式 */
+            QWidget#leftPanel QLabel {{
+                color: {font_color}; /* 设置左侧面板头部的字体颜色 */
+            }}
+            DrawerContentWidget QLabel {{
+                color: {font_color}; /* 设置内容区域标签的字体颜色 */
+            }}
+            QWidget#leftPanel QLabel {{
+                color: {font_color}; /* 设置左侧面板头部的字体颜色 */
+            }}
+            DrawerListWidget::item {{
+                color: {font_color};
+                /* 注意：这里只设置颜色，其他样式如 padding, border-bottom 应由 style.qss 提供 */
+                /* 可能需要确保这里的优先级正确 */
+            }}
+            DrawerContentWidget QLabel {{
+                color: {font_color};
+                /* background-color: transparent; /* 确保背景透明 */ */
+            }}
+        """
+        # --- 结束修改样式表生成 ---
         # Qt will propagate the styles to the children based on the selectors.
         self.setStyleSheet(style)
         # Note: Applying directly to self.leftPanel.setStyleSheet and self.drawerContent.setStyleSheet
         # might also work but applying to the parent is often preferred for managing styles.
-
-        # Optionally, still adjust the overall window opacity if alpha is meant to control that too.
-        # self.setWindowOpacity(a) # Uncomment if the whole window's opacity should change
-        # Update window opacity as well, if alpha is the main driver
-        # self.setWindowOpacity(a) # This affects the whole window including contents
 
     def apply_initial_background(self) -> None:
         """Loads initial background color (CSS format) from settings, converts it, and applies it."""
@@ -337,7 +375,9 @@ class MainWindow(QMainWindow):
         self.tray_icon.setIcon(icon)
         self.tray_icon.setToolTip("图标抽屉管理器")
 
-        # Create context menu
+        # 创建上下文菜单
+        self.tray_menu = QMenu(self)
+        self.tray_menu.setStyleSheet("background-color: rgba(50, 50, 50, 200); border: 1px solid #424242;")  # 设置更深的背景色和边框
         self.tray_menu = QMenu(self)
         show_hide_action = QAction("显示/隐藏", self)
         quit_action = QAction("退出", self)

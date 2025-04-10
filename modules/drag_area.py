@@ -23,7 +23,7 @@ class DragArea(QWidget):
         layout.setContentsMargins(10, 0, 10, 0)
         layout.setSpacing(10)
 
-        self.dragLabel = QLabel("☰ 拖移窗口 ☰", self)
+        self.dragLabel = QLabel("☰ Drag Area ☰", self)
         layout.addWidget(self.dragLabel)
 
         layout.addStretch()
@@ -31,10 +31,11 @@ class DragArea(QWidget):
         self.settingsButton = QPushButton(self)
         settings_icon = QIcon.fromTheme("preferences-system")
         if settings_icon.isNull():
-            self.settingsButton.setText("设置")
+            self.settingsButton.setText("Settings")
         else:
             self.settingsButton.setIcon(settings_icon)
-        self.settingsButton.setFixedSize(40, 40)
+        self.settingsButton.setFixedSize(80, 30)
+        self.settingsButton.setObjectName("settingsButton")
         layout.addWidget(self.settingsButton)
 
         self.settingsButton.clicked.connect(self.on_settings_clicked)

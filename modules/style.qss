@@ -69,7 +69,7 @@ DrawerListWidget::item {
 }
 
 DrawerListWidget::item:selected {
-	background-color: #007acc; /* Blue selection color */
+	background-color: hsla(212, 100%, 50%, 0.6); /* Blue selection color */
 	color: #ffffff;
 }
 
@@ -80,7 +80,7 @@ DrawerListWidget::item:hover {
 /* Style for the Add Drawer Button */
 QPushButton#addButton {
 	/* Assuming objectName="addButton" */
-	background-color: #007acc;
+	background-color: hsla(0, 0%, 0%, 0.5);
 	color: #ffffff;
 	padding: 8px;
 	border-radius: 3px;
@@ -88,17 +88,35 @@ QPushButton#addButton {
 }
 
 QPushButton#addButton:hover {
-	background-color: #005fa3; /* Darker blue on hover */
+	background-color: hsla(0, 0%, 20%, 0.8); /* Darker blue on hover */
 }
 
 QPushButton#addButton:pressed {
 	background-color: #004c8c; /* Even darker when pressed */
 }
 
+/* Style for the Add Drawer Button */
+QPushButton#settingsButton {
+	/* Assuming objectName="settingsButton" */
+	background-color: hsla(0, 0%, 0%, 0.5);
+	color: #ffffff;
+	padding: 2px;
+	border-radius: 3px;
+	margin: 5px; /* Add some margin */
+}
+
+QPushButton#settingsButton:hover {
+	background-color: hsla(0, 0%, 20%, 0.8); /* Darker blue on hover */
+}
+
+QPushButton#settingsButton:pressed {
+	background-color: #004c8c; /* Even darker when pressed */
+}
+
 /* Style for DrawerContentWidget items (basic) */
 /* Removing the broad QWidget rule as it conflicts with container background */
 /* DrawerContentWidget QWidget { */
-	/* background-color: #1c1c1c; */
+/* background-color: #1c1c1c; */
 /* } */
 
 DrawerContentWidget QLabel {
@@ -123,13 +141,13 @@ QScrollArea {
 
 QScrollBar:vertical {
 	border: none;
-	background: #424242; /* Scrollbar track color */
+	background: transparent; /* Scrollbar track color */
 	width: 8px;
 	margin: 0px 0px 0px 0px;
 }
 
 QScrollBar::handle:vertical {
-	background: #888888; /* Scrollbar handle color */
+	background: hsla(0, 0%, 30%, 0.5); /* Scrollbar handle color */
 	min-height: 20px;
 	border-radius: 4px;
 }
@@ -205,6 +223,6 @@ QWidget[isVisualContainer="true"]:hover {
 	background-color: rgba(230, 230, 230, 128); /* Semi-transparent light grey */
 }
 
-QPushButton[isFolderPathButton="true"]{
+QPushButton[isFolderPathButton="true"] {
 	border: none;
 }

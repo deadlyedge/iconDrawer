@@ -28,20 +28,20 @@
       "name": "DaVinci Resolve",
       "path": "C:\\Users\\xdrea\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Blackmagic Design\\DaVinci Resolve",
       "size": {
-        "width": 640,
-        "height": 480
+        "width": 357,
+        "height": 229
       }
     }
   ],
   "window_position": {
-    "x": 360,
-    "y": 363
+    "x": 158,
+    "y": 183
   },
   "background_color_hsla": [
-    189,
-    89,
-    23,
-    0.71
+    17,
+    57,
+    38,
+    0.5
   ],
   "start_with_windows": true,
   "default_icon_folder_path": "asset/icons/folder_icon.png",
