@@ -4,16 +4,16 @@
       "name": "3x",
       "path": "D:\\users\\Desktop\\3x",
       "size": {
-        "width": 577,
-        "height": 529
+        "width": 604,
+        "height": 547
       }
     },
     {
       "name": "Netch",
       "path": "D:\\users\\Desktop\\Netch",
       "size": {
-        "width": 512,
-        "height": 427
+        "width": 384,
+        "height": 389
       }
     },
     {
@@ -26,8 +26,8 @@
     }
   ],
   "window_position": {
-    "x": 258,
-    "y": 191
+    "x": 510,
+    "y": 248
   },
   "background_color_hsla": [
     0.5877437325905293,

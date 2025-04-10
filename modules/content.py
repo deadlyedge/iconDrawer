@@ -87,7 +87,7 @@ class DrawerContentWidget(QWidget):
         super().__init__(parent)
         self.current_folder = ""
         # Initialize first
-        self.icon_size = QSize(64, 64)
+        self.icon_size = QSize(96, 96)
         self.item_size = (100, 120)
         self.items = []
 
