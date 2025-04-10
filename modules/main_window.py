@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QSystemTrayIcon,
     QMenu,
+    QApplication, # Add QApplication import
 )
 from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication, Slot
 from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent
@@ -405,6 +406,8 @@ class MainWindow(QMainWindow):
         # 2. Apply/Save signals connected to controller's handlers
         dialog.backgroundApplied.connect(self.controller.handle_background_applied)
         dialog.startupToggled.connect(self.controller.handle_startup_toggled)
+        # 3. Connect Quit signal
+        dialog.quitApplicationRequested.connect(QApplication.instance().quit)
 
         dialog.exec()
 
@@ -417,6 +420,8 @@ class MainWindow(QMainWindow):
                 self.controller.handle_background_applied
             )
             dialog.startupToggled.disconnect(self.controller.handle_startup_toggled)
+            # Disconnect Quit signal
+            dialog.quitApplicationRequested.disconnect(QApplication.instance().quit)
         except RuntimeError:
             # Signals might already be disconnected if dialog was closed abruptly
             pass

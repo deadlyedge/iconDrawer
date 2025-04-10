@@ -27,6 +27,8 @@ class SettingsDialog(QDialog):
     backgroundApplied = Signal(float, float, float, float)
     # Signal to toggle startup setting
     startupToggled = Signal(bool)
+    # Signal to request application quit
+    quitApplicationRequested = Signal()
 
     def __init__(
         self,
@@ -130,9 +132,13 @@ class SettingsDialog(QDialog):
         # main_layout.addSpacing(10) 
 
         # --- Dialog Buttons ---
-        self.button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
+        self.button_box = QDialogButtonBox()
+        # Add standard OK and Cancel buttons
+        self.button_box.addButton(QDialogButtonBox.StandardButton.Ok)
+        self.button_box.addButton(QDialogButtonBox.StandardButton.Cancel)
+        # Add custom Quit button
+        self.quit_button = self.button_box.addButton("退出程序", QDialogButtonBox.ButtonRole.DestructiveRole)
+
         main_layout.addWidget(self.button_box)
 
     def _connect_signals(self) -> None:
@@ -144,8 +150,11 @@ class SettingsDialog(QDialog):
         self.alpha_slider.valueChanged.connect(self._update_labels_and_preview)
 
         # Buttons
-        self.button_box.accepted.connect(self.accept)
-        self.button_box.rejected.connect(self.reject)
+        self.button_box.accepted.connect(self.accept) # OK button
+        self.button_box.rejected.connect(self.reject) # Cancel button
+        # Connect the custom Quit button
+        if self.quit_button: # Ensure button was created
+            self.quit_button.clicked.connect(self.quitApplicationRequested.emit)
 
     def _load_initial_settings(self) -> None:
         """Loads settings from SettingsManager and sets initial widget states."""
