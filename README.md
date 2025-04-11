@@ -5,7 +5,7 @@
 
 I've been using Stardock Fences, but I realized that what I really need is a simple application to organize my desktop icons effectively. After some searching and research, I found that there wasn't a straightforward implementation for this simple function, which led to the creation of this project.
 
-Built with PySide6, this application is a graphical drawer management tool. Users can manage and browse folders (drawers) stored on their computer, displaying the drawer list and drawer content in two separate windows. From an efficiency and functionality perspective, I believe C# and .NET would be better development platforms. However, I'm not familiar with C, so I attempted to implement the basic features using Python. I hope this project inspires developers (ideally, the PowerToys team) to recognize the utility of this feature and create even better products.
+Built with PySide6, this application is a graphical desktop management tool. Users can manage and browse folders (drawers) stored on their computer, displaying the drawer list and drawer content in two separate windows. From an efficiency and functionality perspective, I believe C# and .NET would be better development platforms. However, I'm not familiar with C, so I attempted to implement the basic features using Python. I hope this project inspires developers (ideally, the PowerToys team) to recognize the utility of this feature and create even better products.
 
 Anyway, one thing is very important: the goal of icon drawer is to manage the desktop, and not to mess it up.
 

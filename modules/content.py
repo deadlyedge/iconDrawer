@@ -236,11 +236,11 @@ class DrawerContentWidget(QWidget):
         )  # Add container with stretch
 
         # Add Refresh Button
-        # self.refresh_button = QPushButton("🔄") # Or use an icon
-        # self.refresh_button.setObjectName("refreshButton")
-        # self.refresh_button.setToolTip("刷新当前文件夹内容")
-        # self.refresh_button.clicked.connect(self._refresh_content)
-        # self.header_layout.addWidget(self.refresh_button, 0) # Add refresh button without stretch
+        self.refresh_button = QPushButton("🔄") # Or use an icon
+        self.refresh_button.setObjectName("refreshButton")
+        self.refresh_button.setToolTip("刷新当前文件夹内容")
+        self.refresh_button.clicked.connect(self._refresh_content)
+        self.header_layout.addWidget(self.refresh_button, 0) # Add refresh button without stretch
 
         # Add Close Button
         self.close_button = QPushButton("X")
