@@ -3,9 +3,10 @@ name = "icondrawer"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = "~=3.12"
 dependencies = [
     "lnkparse3>=1.5.1",
+    "nuitka>=2.6.9",
     "pydantic>=2.11.2",
     "pyside6>=6.8.3",
     "watchdog>=6.0.0",

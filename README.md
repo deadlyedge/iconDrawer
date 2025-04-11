@@ -64,6 +64,11 @@ Anyway, one thing is very important: the goal of icon drawer is to manage the de
     python main.py
     ```
 
+3.  **Build with Nuitka**:
+    ```bash
+    uv run nuitka --onefile --windows-console-mode=disable --include-data-dir=asset=asset --mingw64 --enable-plugin=pyside6 main.py
+    ```
+
 ## Maintenance and Extension
 - Users can directly modify drawer configuration information by editing `drawers-settings.json`.
 - The window layout and interface style of this application are easy to extend. Contributions for new features and interface improvements are welcome.

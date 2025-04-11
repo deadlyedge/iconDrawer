@@ -49,7 +49,8 @@ if __name__ == "__main__":
     try:
         if mainWindow.controller:
             drawers_data = mainWindow.controller._drawers_data
-            drawer_paths = [d.get("path") for d in drawers_data if d.get("path")]
+            # Explicitly filter for non-None string paths to satisfy Pylance
+            drawer_paths = [path for d in drawers_data if (path := d.get("path")) and isinstance(path, str)]
         else:
             logging.error("MainWindow.controller 未初始化，无法获取抽屉目录")
     except Exception as e:

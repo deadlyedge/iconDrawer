@@ -11,3 +11,8 @@ wheels/
 qt/
 references/
 design/
+
+# for nuitka building
+*.build
+*.dist
+*.onefile-build
