@@ -4,7 +4,7 @@ from PySide6.QtGui import QIcon # Import QIcon
 from PySide6.QtCore import QFile, QIODevice, QTextStream
 import logging
 from modules.main_window import MainWindow
-from modules.watchdog_manager import DrawerWatchdogManager  # 导入watchdog管理器
+from modules.data_manager import DataManager  # 导入统一数据管理器
 
 # Configure basic logging (adjust level and format as needed for production)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -36,32 +36,33 @@ if __name__ == "__main__":
     # mainWindow.resize(800, 600) # Initial resize might not be needed if hidden - handled by settings?
     mainWindow.show() # Don't show initially, rely on tray icon to show/hide
 
-    # 初始化watchdog
-    watchdog_manager = DrawerWatchdogManager(mainWindow.controller, mainWindow)
-    # 连接watchdog信号到controller槽
+    # 初始化 DataManager
+    data_manager = DataManager()
+    # 连接 DataManager 信号到 controller 槽
     if mainWindow.controller is not None:
-        watchdog_manager.directoryChanged.connect(mainWindow.controller.on_directory_changed)
+        data_manager.directoryChanged.connect(mainWindow.controller.on_directory_changed)
+        # 可选：如需监听预加载完成信号，可在此连接
+        # data_manager.preloadFinished.connect(mainWindow.controller.on_preload_finished)
     else:
-        logging.error("Controller 未初始化，无法连接 watchdog 信号")
+        logging.error("Controller 未初始化，无法连接 DataManager 信号")
 
     # 获取所有抽屉目录路径
     drawer_paths = []
     try:
         if mainWindow.controller:
             drawers_data = mainWindow.controller._drawers_data
-            # Explicitly filter for non-None string paths to satisfy Pylance
             drawer_paths = [path for d in drawers_data if (path := d.get("path")) and isinstance(path, str)]
         else:
             logging.error("MainWindow.controller 未初始化，无法获取抽屉目录")
     except Exception as e:
         logging.error(f"获取抽屉目录失败: {e}")
 
-    watchdog_manager.start(drawer_paths)
+    data_manager.start_monitor(drawer_paths)
 
     try:
         exit_code = app.exec()
     finally:
-        # 程序退出时停止watchdog
-        watchdog_manager.stop()
+        # 程序退出时停止监控
+        data_manager.stop_monitor()
 
     sys.exit(exit_code)

@@ -15,7 +15,7 @@ import logging
 # Import icon_utils and DefaultIconProvider for initialization and type hint
 import modules.icon_utils
 from modules.icon_provider import DefaultIconProvider
-from modules.preload_worker import FileInfo, WorkerSignals, PreloadWorker
+from modules.data_manager import DataManager, FileInfo
 
 # Configure basic logging
 logging.basicConfig(
@@ -70,12 +70,9 @@ class AppController(QObject):
         self._locked_item_data: Optional[DrawerDict] = None
         # Add icon_provider attribute
         self.icon_provider: Optional[DefaultIconProvider] = None
-        # --- Preloading Attributes ---
-        self.threadpool = QThreadPool()
-        logging.info(
-            f"Multithreading with maximum {self.threadpool.maxThreadCount()} threads."
-        )
-        self._preloaded_file_lists: dict[str, List[FileInfo]] = {}
+        # --- DataManager 集成 ---
+        self.data_manager = DataManager()
+        self.data_manager.directoryChanged.connect(self.on_directory_changed)
 
         # Explicitly initialize icon components here
         modules.icon_utils._initialize_icon_components()
@@ -87,7 +84,6 @@ class AppController(QObject):
             # For now, log the critical error. Downstream code needs to handle None.
 
         self._load_initial_data()
-        self._start_preloading_drawers()  # Start preloading after initial data load
 
     # --- Data Management ---
 
@@ -171,8 +167,8 @@ class AppController(QObject):
                 self._drawers_data.append(new_drawer_data)
                 self._main_view.add_drawer_item(new_drawer_data)
                 self.save_settings()
-                # Also preload the newly added drawer
-                self._start_single_drawer_preload(folder_path_str)
+                # 新增抽屉后同步刷新缓存
+                self.data_manager.reload_drawer_content(folder_path_str)
             else:
                 # Handle invalid folder selection
                 logging.error(
@@ -207,136 +203,22 @@ class AppController(QObject):
 
     # --- Preloading Logic ---
 
-    def _start_preloading_drawers(self) -> None:
-        """Starts background preloading for all configured drawers."""
-        logging.info("Starting initial preload for all drawers...")
-        if not self._drawers_data:
-            logging.info("No drawers configured, skipping preload.")
-            return
-        for drawer_data in self._drawers_data:
-            path_str = drawer_data.get("path")
-            if path_str and Path(path_str).is_dir():
-                self._start_single_drawer_preload(path_str)
-            elif path_str:
-                logging.warning(f"Skipping preload for invalid path: {path_str}")
-
-    def _start_single_drawer_preload(self, drawer_path: str) -> None:
-        """Starts the preloading worker for a single drawer path."""
-        if drawer_path in self._preloaded_file_lists:
-            # Optional: Could force reload here if needed, or just log
-            logging.debug(f"Path {drawer_path} already preloaded or pending.")
-            # return # If we don't want to re-trigger
-
-        logging.debug(f"Queueing preload for: {drawer_path}")
-        signals = WorkerSignals()
-        signals.finished.connect(self._on_preload_finished)
-        signals.error.connect(self._on_preload_error)
-        worker = PreloadWorker(drawer_path, signals)
-        # Add the worker to the thread pool
-        self.threadpool.start(worker)
-
-    @Slot(str, list)
-    def _on_preload_finished(self, drawer_path: str, file_list: List[FileInfo]):
-        """Slot to receive results from the preload worker."""
-        logging.info(f"Finished preloading {len(file_list)} items for: {drawer_path}")
-        self._preloaded_file_lists[drawer_path] = file_list
-        # TODO: Optionally, if the drawer is currently visible, trigger an update?
-
-    @Slot(str, str)
-    def _on_preload_error(self, drawer_path: str, error_message: str):
-        """Slot to handle errors from the preload worker."""
-        logging.error(f"Error during preload for {drawer_path}: {error_message}")
-        # Store empty list or None to indicate failure?
-        self._preloaded_file_lists[drawer_path] = []  # Store empty list on error
+    # 预加载机制已移除，无需 _start_preloading_drawers
 
     def get_preloaded_file_list(self, drawer_path: str) -> Optional[List[FileInfo]]:
-        """Public method to access preloaded data."""
-        return self._preloaded_file_lists.get(drawer_path)
+        """通过 DataManager 获取预加载数据。"""
+        # 记录最近一次请求的目录，用于切换抽屉时自动刷新
+        self._last_requested_folder = drawer_path
+        return self.data_manager.get_file_list(drawer_path)
 
     # --- Slot Handlers for View Signals ---
 
     def on_directory_changed(self, path: str):
-        """watchdog通知目录变化，延迟刷新"""
-        # --- DIAGNOSTIC LOG ---
+        """目录变动时，直接刷新当前内容，和刷新按钮完全一致。"""
         logging.critical(f"!!!!!! on_directory_changed TRIGGERED for path: {path} !!!!!!")
-        # --- END DIAGNOSTIC LOG ---
+        if self._main_view.drawerContent:
+            self._main_view.drawerContent.update_content(path)
 
-        from PySide6.QtCore import QTimer
-
-        def refresh():
-            logging.info(f"Controller received directory change signal, preparing refresh for: {path}")
-            # Step 1: Always reload content to update the cache
-            file_list = self.reload_drawer_content(path)
-
-            # Step 2: Check if the changed path is the currently locked/displayed drawer
-            is_currently_displayed = False
-            if self._locked and self._locked_item_data:
-                locked_path_raw = self._locked_item_data.get("path")
-                if locked_path_raw:
-                    # Normalize both paths before comparison
-                    normalized_locked_path = os.path.normcase(os.path.normpath(locked_path_raw))
-                    normalized_changed_path = os.path.normcase(os.path.normpath(path))
-                    logging.debug(f"Comparing normalized paths: Locked='{normalized_locked_path}', Changed='{normalized_changed_path}'")
-                    if normalized_locked_path == normalized_changed_path:
-                        is_currently_displayed = True
-                else:
-                    logging.warning("Locked item data exists but has no path.")
-
-
-            # Step 3: Only update the visible drawer content if it matches the changed path
-            if is_currently_displayed and self._main_view.drawerContent:
-                logging.info(f"Changed path {path} is currently displayed. Updating view.")
-                self._main_view.drawerContent.update_with_file_list(path, file_list)
-            elif is_currently_displayed:
-                 logging.warning(f"Changed path {path} is locked, but drawerContent is not available for update.")
-            else:
-                logging.info(f"Changed path {path} is not currently displayed. Cache updated silently.")
-
-        # Use a timer to debounce filesystem events
-        QTimer.singleShot(500, refresh)
-
-    def reload_drawer_content(self, drawer_path: str):
-        """同步扫描目录，更新缓存，返回最新文件列表"""
-        from pathlib import Path
-
-        file_list = []
-        try:
-            p = Path(drawer_path)
-            if not p.is_dir():
-                logging.warning(f"路径无效，无法刷新: {drawer_path}")
-                self._preloaded_file_lists[drawer_path] = []
-                return []
-
-            import time
-
-            max_attempts = 5
-            for attempt in range(max_attempts):
-                file_list = []
-                try:
-                    # 延迟200ms等待文件系统稳定
-                    time.sleep(0.2)
-                    for child in p.iterdir():
-                        file_info = {
-                            "path": str(child),
-                            "name": child.name,
-                            "is_dir": child.is_dir(),
-                        }
-                        file_list.append(type("FileInfo", (), file_info)())
-                except Exception as e:
-                    logging.warning(f"扫描目录异常: {e}")
-                    file_list = []
-
-                if file_list:
-                    break  # 扫描到非空，退出循环
-
-            self._preloaded_file_lists[drawer_path] = file_list
-            logging.info(f"同步刷新抽屉内容完成: {drawer_path}, 共{len(file_list)}项")
-            logging.info(f"最终扫描结果: {drawer_path}, 文件数: {len(file_list)}")
-            return file_list
-        except Exception as e:
-            logging.error(f"同步刷新抽屉内容失败: {drawer_path}, 错误: {e}")
-            self._preloaded_file_lists[drawer_path] = []
-            return []
 
     def handle_item_selected(self, item: QListWidgetItem) -> None:
         """

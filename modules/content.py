@@ -242,13 +242,14 @@ class DrawerContentWidget(QWidget):
 
     def update_content(self, folder_path: str) -> None:
         """
-        更新显示的文件夹路径及内容
-        Uses preloaded list and async icon loading.
+        更新显示的文件夹路径及内容，始终同步刷新缓存，避免卡在“正在加载...”
         """
-        preloaded_list = None
+        file_list = None
         if self.controller:
-            preloaded_list = self.controller.get_preloaded_file_list(folder_path)
-        self.update_with_file_list(folder_path, preloaded_list)
+            # 先同步刷新缓存，再取最新数据
+            self.controller.data_manager.reload_drawer_content(folder_path)
+            file_list = self.controller.get_preloaded_file_list(folder_path)
+        self.update_with_file_list(folder_path, file_list)
 
     def update_with_file_list(self, folder_path: str, file_list: Optional[List]) -> None:
         """
@@ -349,8 +350,8 @@ class DrawerContentWidget(QWidget):
         if self.current_folder and self.controller:
             logging.info(f"Force refreshing content for: {self.current_folder}")
             try:
-                # Directly call the controller's synchronous reload method
-                new_file_list = self.controller.reload_drawer_content(self.current_folder)
+                # 通过 DataManager 强制同步刷新
+                new_file_list = self.controller.data_manager.reload_drawer_content(self.current_folder)
                 # Update the view with the newly fetched list
                 self.update_with_file_list(self.current_folder, new_file_list)
                 logging.info(f"Force refresh complete for: {self.current_folder}")
