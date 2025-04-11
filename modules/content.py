@@ -40,112 +40,23 @@ from PySide6.QtCore import (
     QSize,
     QUrl,
     Signal,
-    QObject,  # Add QObject
-    QRunnable,  # Add QRunnable
-    QThreadPool,  # Add QThreadPool
-    Slot,  # Add Slot
+    QObject,
+    QThreadPool,
+    Slot,
 )
 # TYPE_CHECKING is imported above
 
-# Import refactored functions and necessary classes
 from .custom_size_grip import CustomSizeGrip
+from .content_utils import calculate_available_label_width, truncate_text
 
-# We will call get_icon_for_path from a worker thread
+# 引入拆分后的异步加载和文件项模块
+from .icon_loader import IconWorkerSignals, IconLoadWorker
+from .file_item import FileIconWidget
 from .icon_utils import get_icon_for_path
-from .content_utils import calculate_available_label_width
-from .content_utils import truncate_text  # Keep truncate_text for file names
 
-# Forward declare AppController and FileInfo for type hints
+# Forward declare AppController 和 FileInfo
 if TYPE_CHECKING:
-    from .controller import AppController, FileInfo  # Add FileInfo
-
-
-# --- Icon Loading Worker ---
-
-
-class IconWorkerSignals(QObject):
-    """Defines signals for the icon loading worker."""
-
-    icon_loaded = Signal(QWidget, QIcon)  # widget instance, loaded icon
-    error = Signal(str, str)  # file_path, error message
-
-
-class IconLoadWorker(QRunnable):
-    """Worker thread to load an icon for a specific file path."""
-
-    def __init__(
-        self, file_path: str, target_widget: QWidget, signals: IconWorkerSignals
-    ):
-        super().__init__()
-        self.file_path = file_path
-        self.target_widget = target_widget  # The FileIconWidget instance
-        self.signals = signals
-
-    @Slot()
-    def run(self):
-        """Load the icon in the background."""
-        try:
-            # Assuming get_icon_for_path is thread-safe or handles its own locking if needed
-            icon = get_icon_for_path(self.file_path)
-            if icon:
-                self.signals.icon_loaded.emit(self.target_widget, icon)
-            else:
-                # Handle case where icon loading returns None (e.g., file not found during load)
-                logging.warning(f"Icon loading returned None for: {self.file_path}")
-                # Optionally emit an error or a default icon signal
-                # self.signals.error.emit(self.file_path, "Icon could not be loaded")
-        except Exception as e:
-            logging.error(f"Error loading icon for {self.file_path}: {e}")
-            self.signals.error.emit(self.file_path, str(e))
-
-
-class FileIconWidget(QWidget):
-    """
-    用于显示文件图标和文件名的部件
-    """
-
-    # Add is_dir and icon_label
-    def __init__(
-        self, file_path: str, is_dir: bool, parent: Optional[QWidget] = None
-    ) -> None:
-        super().__init__(parent)
-        self.file_path = file_path
-        self.is_dir = is_dir
-        self.icon_label: Optional[QLabel] = None  # To hold the icon QLabel
-
-        self.visual_container = QWidget(self)
-        self.visual_container.setProperty("isVisualContainer", True)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.visual_container)
-
-        self.content_layout = QVBoxLayout(self.visual_container)
-        self.content_layout.setContentsMargins(0, 5, 0, 5)  # Keep margins
-        self.content_layout.setSpacing(2)  # Keep spacing
-
-    def set_icon(self, icon: QIcon, icon_size: QSize):
-        """Sets the icon pixmap on the label."""
-        if self.icon_label:
-            pixmap = icon.pixmap(icon_size)
-            # Scale pixmap if needed (same logic as in _create_file_item)
-            if (
-                pixmap.width() > icon_size.width()
-                or pixmap.height() > icon_size.height()
-            ):
-                pixmap = pixmap.scaled(
-                    icon_size,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            self.icon_label.setPixmap(pixmap)
-
-    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
-        """
-        双击打开文件或文件夹
-        """
-        QDesktopServices.openUrl(QUrl.fromLocalFile(self.file_path))
-        super().mouseDoubleClickEvent(event)
+    from .controller import AppController, FileInfo
 
 
 class ClickableWidget(QWidget):

@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 from typing import Optional
 
+
 class DrawerListWidget(QListWidget):
     itemSelected = Signal(QListWidgetItem)
     selectionCleared = Signal()

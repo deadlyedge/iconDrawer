@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Optional, Dict
+from typing import Optional
 from PySide6.QtGui import QIcon
 
 # Dictionary to hold default icons
@@ -11,7 +11,9 @@ DEFAULT_ICONS: dict[str, Optional[QIcon]] = {}
 class DefaultIconProvider:
     """Manages and provides default QIcon objects based on loaded settings."""
 
-    def __init__(self, folder_icon_path: str, file_icon_theme: str, unknown_icon_theme: str):
+    def __init__(
+        self, folder_icon_path: str, file_icon_theme: str, unknown_icon_theme: str
+    ):
         """
         Initializes the provider with paths/themes from settings.
 
@@ -20,12 +22,16 @@ class DefaultIconProvider:
             file_icon_theme: Theme name for the generic file icon.
             unknown_icon_theme: Theme name for the unknown icon.
         """
-        self._initialize_default_icons(folder_icon_path, file_icon_theme, unknown_icon_theme)
+        self._initialize_default_icons(
+            folder_icon_path, file_icon_theme, unknown_icon_theme
+        )
 
-    def _initialize_default_icons(self, folder_icon_path: str, file_icon_theme: str, unknown_icon_theme: str):
+    def _initialize_default_icons(
+        self, folder_icon_path: str, file_icon_theme: str, unknown_icon_theme: str
+    ):
         """Creates the default QIcon objects based on provided settings."""
-        global DEFAULT_ICONS # Modify the global dict (or make it instance specific if preferred)
-        DEFAULT_ICONS.clear() # Clear previous icons if re-initializing
+        global DEFAULT_ICONS  # Modify the global dict (or make it instance specific if preferred)
+        DEFAULT_ICONS.clear()  # Clear previous icons if re-initializing
 
         # Default Folder Icon
         if os.path.exists(folder_icon_path):
@@ -35,7 +41,9 @@ class DefaultIconProvider:
                 f"Default folder icon not found at configured path: {folder_icon_path}. Using theme fallback."
             )
             # Fallback to theme icon if path is invalid
-            DEFAULT_ICONS["folder"] = QIcon.fromTheme("folder", QIcon()) # Use basic QIcon() as final fallback
+            DEFAULT_ICONS["folder"] = QIcon.fromTheme(
+                "folder", QIcon()
+            )  # Use basic QIcon() as final fallback
 
         # Default Generic File Icon
         # Use basic QIcon() as final fallback if theme icon is null

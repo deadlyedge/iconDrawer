@@ -1,13 +1,11 @@
 import os
-from typing import List, Optional, TYPE_CHECKING, Tuple, NamedTuple
+from typing import List, Optional, TYPE_CHECKING, Tuple
 from PySide6.QtCore import (
     QObject,
     QPoint,
     QSize,
     Slot,
     QThreadPool,
-    QRunnable,
-    Signal,
 )
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 from modules.settings_manager import SettingsManager, DrawerDict
@@ -17,59 +15,12 @@ import logging
 # Import icon_utils and DefaultIconProvider for initialization and type hint
 import modules.icon_utils
 from modules.icon_provider import DefaultIconProvider
+from modules.preload_worker import FileInfo, WorkerSignals, PreloadWorker
 
 # Configure basic logging
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
-
-# --- Preloading Structures ---
-class FileInfo(NamedTuple):
-    """Simple structure to hold basic file info for preloading."""
-
-    name: str
-    path: str
-    is_dir: bool
-
-
-class WorkerSignals(QObject):
-    """Defines signals available from a running worker thread."""
-
-    finished = Signal(str, list)  # drawer_path, list[FileInfo]
-    error = Signal(str, str)  # drawer_path, error_message
-
-
-class PreloadWorker(QRunnable):
-    """Worker thread for preloading file list of a single drawer."""
-
-    def __init__(self, drawer_path: str, signals: WorkerSignals):
-        super().__init__()
-        self.drawer_path = drawer_path
-        self.signals = signals
-
-    @Slot()
-    def run(self):
-        """Execute the preloading task."""
-        file_list = []
-        try:
-            for entry in os.scandir(self.drawer_path):
-                try:
-                    # Basic info is usually fast, avoid stat() unless needed later
-                    file_list.append(
-                        FileInfo(
-                            name=entry.name, path=entry.path, is_dir=entry.is_dir()
-                        )
-                    )
-                except OSError as e:
-                    # Log error for specific entry but continue scanning others
-                    logging.warning(
-                        f"Could not access entry {entry.name} in {self.drawer_path}: {e}"
-                    )
-            self.signals.finished.emit(self.drawer_path, file_list)
-        except OSError as e:
-            logging.error(f"Error scanning drawer {self.drawer_path}: {e}")
-            self.signals.error.emit(self.drawer_path, str(e))
 
 
 # Use TYPE_CHECKING to avoid circular imports for type hints
@@ -496,39 +447,8 @@ class AppController(QObject):
         # For Linux, it involves creating/deleting a .desktop file in ~/.config/autostart.
         if enable:
             logging.info("Placeholder: Adding application to system startup.")
-            # Example (Windows - requires 'pip install pywin32' potentially):
-            # try:
-            #     import winreg
-            #     import sys
-            #     key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-            #     app_name = "IconDrawer" # Or get from application info
-            #     app_path = sys.executable # Path to the python interpreter running the script
-            #     script_path = Path(__file__).resolve().parents[1] / "main.py" # Adjust path to your main script
-            #     command = f'"{app_path}" "{script_path}"'
-            #
-            #     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_WRITE) as key:
-            #         winreg.SetValueEx(key, app_name, 0, winreg.REG_SZ, command)
-            #     logging.info(f"Added '{app_name}' to startup registry.")
-            # except ImportError:
-            #     logging.error("Could not import winreg. Startup setting not applied (Windows). Install pywin32.")
-            # except Exception as e:
-            #     logging.error(f"Failed to add to startup registry: {e}")
             pass
         else:
             logging.info("Placeholder: Removing application from system startup.")
-            # Example (Windows):
-            # try:
-            #     import winreg
-            #     key_path = r"Software\Microsoft\Windows\CurrentVersion\Run"
-            #     app_name = "IconDrawer"
-            #     with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key_path, 0, winreg.KEY_WRITE) as key:
-            #         winreg.DeleteValue(key, app_name)
-            #     logging.info(f"Removed '{app_name}' from startup registry.")
-            # except FileNotFoundError:
-            #      logging.info(f"'{app_name}' not found in startup registry (already removed?).")
-            # except ImportError:
-            #     logging.error("Could not import winreg. Startup setting not applied (Windows). Install pywin32.")
-            # except Exception as e:
-            #     logging.error(f"Failed to remove from startup registry: {e}")
             pass
         # Add similar blocks for macOS and Linux if needed

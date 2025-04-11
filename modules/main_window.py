@@ -9,11 +9,11 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QSystemTrayIcon,
     QMenu,
-    QApplication, # Add QApplication import
+    QApplication,  # Add QApplication import
 )
 from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication, Slot
 from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent
-import logging # Import logging
+import logging  # Import logging
 
 from modules.settings_manager import DrawerDict  # Import SettingsManager
 from modules.list import DrawerListWidget
@@ -46,22 +46,25 @@ class MainWindow(QMainWindow):
 
         # --- Create DrawerContentWidget *after* controller exists ---
         if not self.controller:
-             # This should ideally not happen if AppController init succeeds
-             logging.critical("Controller failed to initialize before creating DrawerContentWidget!")
-             # Handle this critical error appropriately, maybe exit or show error message
-             # For now, we might skip creating drawerContent or create a dummy one
-             self.drawerContent = None # Explicitly set to None
+            # This should ideally not happen if AppController init succeeds
+            logging.critical(
+                "Controller failed to initialize before creating DrawerContentWidget!"
+            )
+            # Handle this critical error appropriately, maybe exit or show error message
+            # For now, we might skip creating drawerContent or create a dummy one
+            self.drawerContent = None  # Explicitly set to None
         else:
-             # Pass the controller and the central widget container
-             self.drawerContent = DrawerContentWidget(self.controller, self._central_widget_container)
-             self.drawerContent.setObjectName("drawerContent")
-             self.drawerContent.setVisible(False)
-             self.drawerContent.setMinimumSize(300, 200)
-             # Ensure it's positioned correctly initially (might need adjustment if window size changes)
-             self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
+            # Pass the controller and the central widget container
+            self.drawerContent = DrawerContentWidget(
+                self.controller, self._central_widget_container
+            )
+            self.drawerContent.setObjectName("drawerContent")
+            self.drawerContent.setVisible(False)
+            self.drawerContent.setMinimumSize(300, 200)
+            # Ensure it's positioned correctly initially (might need adjustment if window size changes)
+            self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
 
-
-        self._connect_signals() # Connect signals *after* drawerContent is created
+        self._connect_signals()  # Connect signals *after* drawerContent is created
         self._create_tray_icon()  # Create tray icon and menu
 
         # Hide the window initially, show only the tray icon
@@ -194,9 +197,11 @@ class MainWindow(QMainWindow):
         """Adjusts window size, positions, updates, and shows the content widget."""
         folder_path = drawer_data.get("path")
         if not folder_path:
-            logging.error(f"Cannot show content for drawer '{drawer_data.get('name')}' - path missing.")
+            logging.error(
+                f"Cannot show content for drawer '{drawer_data.get('name')}' - path missing."
+            )
             return
-        
+
         # Ensure drawerContent exists before proceeding
         if not self.drawerContent:
             logging.error("Cannot show drawer content: DrawerContentWidget is None.")
@@ -259,7 +264,7 @@ class MainWindow(QMainWindow):
         """Returns the current size of the drawer content widget."""
         if self.drawerContent:
             return self.drawerContent.size()
-        return QSize(0, 0) # Return default/invalid size if no content widget
+        return QSize(0, 0)  # Return default/invalid size if no content widget
 
     def get_current_position(self) -> QPoint:
         """Returns the current top-left position of the main window."""
@@ -347,7 +352,9 @@ class MainWindow(QMainWindow):
         """Loads initial background color (CSS format) from settings, converts it, and applies it."""
         if self.controller and self.controller.settings_manager:
             # Get color in CSS format (H:0-359, S:0-100, L:0-100, A:0.0-1.0)
-            h_css, s_css, l_css, a_float = self.controller.settings_manager.get_background_color_hsla()
+            h_css, s_css, l_css, a_float = (
+                self.controller.settings_manager.get_background_color_hsla()
+            )
             # Convert to 0.0-1.0 floats for the set_background_color slot
             h_float = h_css / 359.0
             s_float = s_css / 100.0
@@ -360,14 +367,16 @@ class MainWindow(QMainWindow):
             # Call the slot with 0.0-1.0 floats
             self.set_background_color(h_float, s_float, l_float, a_float)
         else:
-            logging.warning("Controller or SettingsManager not ready for initial background application.")
+            logging.warning(
+                "Controller or SettingsManager not ready for initial background application."
+            )
 
     # --- Tray Icon Methods ---
 
     def _create_tray_icon(self) -> None:
         """Creates the system tray icon and its context menu."""
         self.tray_icon = QSystemTrayIcon(self)
-        icon_path = "asset/drawer.icon.4.ico" # Consider making path configurable
+        icon_path = "asset/drawer.icon.4.ico"  # Consider making path configurable
         icon = QIcon(icon_path)
         if icon.isNull():
             logging.warning(f"Tray icon file '{icon_path}' not found or invalid.")
@@ -377,7 +386,9 @@ class MainWindow(QMainWindow):
 
         # 创建上下文菜单
         self.tray_menu = QMenu(self)
-        self.tray_menu.setStyleSheet("background-color: rgba(50, 50, 50, 200); border: 1px solid #424242;")  # 设置更深的背景色和边框
+        self.tray_menu.setStyleSheet(
+            "background-color: rgba(50, 50, 50, 200); border: 1px solid #424242;"
+        )  # 设置更深的背景色和边框
         self.tray_menu = QMenu(self)
         show_hide_action = QAction("显示/隐藏", self)
         quit_action = QAction("退出", self)
@@ -442,7 +453,7 @@ class MainWindow(QMainWindow):
         # Ensure content widget is still positioned correctly after potential window resize
         # (might not be strictly necessary if layout handles it, but good for robustness)
         if self.drawerContent:
-             self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
+            self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
 
     # --- Event Overrides ---
 
@@ -464,7 +475,9 @@ class MainWindow(QMainWindow):
     def show_settings_dialog(self) -> None:
         """Shows the settings dialog."""
         if not self.controller or not self.controller.settings_manager:
-            logging.error("Controller or SettingsManager not available for settings dialog.")
+            logging.error(
+                "Controller or SettingsManager not available for settings dialog."
+            )
             return
 
         dialog = SettingsDialog(self.controller.settings_manager, self)
@@ -481,8 +494,9 @@ class MainWindow(QMainWindow):
         if app_instance:
             dialog.quitApplicationRequested.connect(app_instance.quit)
         else:
-            logging.error("QApplication instance not found when connecting quit signal.")
-
+            logging.error(
+                "QApplication instance not found when connecting quit signal."
+            )
 
         dialog.exec()
 
