@@ -42,7 +42,7 @@ Anyway, one thing is very important: the goal of icon drawer is to manage the de
 4. Hover over or click a drawer item to display its contents in the right window; the right window hides when the mouse leaves the list area or no drawer is selected.
 
 ## Dependencies and Environment
-- Python Version Requirement: Python 3.12.x (specific version can be found in `.python-version`)
+- Python Version Requirement: Python 3.x (specific version can be found in `.python-version`)
 - Dependency Management: Project dependencies are defined in the `pyproject.toml` file.
 - Main Dependencies: PySide6, etc. (see `pyproject.toml` for details).
 
