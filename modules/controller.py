@@ -6,6 +6,7 @@ from PySide6.QtCore import (
     QSize,
     Slot,
     QThreadPool,
+    Signal,
 )
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 from modules.settings_manager import SettingsManager, DrawerDict
@@ -36,6 +37,11 @@ class AppController(QObject):
     Manages the application's state and logic, acting as a controller
     between the view (MainWindow) and the data (ConfigManager).
     """
+
+    # 解耦信号
+    showDrawerContent = Signal(dict, QSize)
+    hideDrawerContent = Signal()
+    updateDrawerContent = Signal(str)
 
     def __init__(
         self, main_view: "MainWindow", parent: Optional[QObject] = None
@@ -282,7 +288,7 @@ class AppController(QObject):
                 # Case A: Clicked the currently locked item -> Unlock and hide
                 self._locked = False
                 self._locked_item_data = None
-                self._main_view.hide_drawer_content()
+                self.hideDrawerContent.emit()
             else:
                 # Case B: Clicked a different item while locked -> Switch content
                 # --- Save size of the OLD drawer before switching ---
@@ -299,7 +305,7 @@ class AppController(QObject):
                 self._locked_item_data = (
                     current_drawer_config if current_drawer_config else drawer_data
                 )  # Store the latest config
-                self._main_view.show_drawer_content(
+                self.showDrawerContent.emit(
                     self._locked_item_data, target_content_size
                 )
         else:
@@ -308,7 +314,7 @@ class AppController(QObject):
             self._locked_item_data = (
                 current_drawer_config if current_drawer_config else drawer_data
             )  # Store the latest config
-            self._main_view.show_drawer_content(
+            self.showDrawerContent.emit(
                 self._locked_item_data, target_content_size
             )
 
@@ -318,7 +324,7 @@ class AppController(QObject):
         # only hide the content if it's not locked.
         if not self._locked:
             # Size saving is handled by resize/drag finish signals, no need here.
-            self._main_view.hide_drawer_content()
+            self.hideDrawerContent.emit()
         # If it IS locked, selection change doesn't hide it.
 
     def handle_content_close_requested(self) -> None:
@@ -333,7 +339,7 @@ class AppController(QObject):
         # --- Actual closing logic ---
         self._locked = False
         self._locked_item_data = None
-        self._main_view.hide_drawer_content()
+        self.hideDrawerContent.emit()
         self._main_view.clear_list_selection()  # Ensure list selection is also cleared
 
     def handle_content_resize_finished(self) -> None:

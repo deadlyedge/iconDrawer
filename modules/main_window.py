@@ -50,8 +50,6 @@ class MainWindow(QMainWindow):
             logging.critical(
                 "Controller failed to initialize before creating DrawerContentWidget!"
             )
-            # Handle this critical error appropriately, maybe exit or show error message
-            # For now, we might skip creating drawerContent or create a dummy one
             self.drawerContent = None  # Explicitly set to None
         else:
             # Pass the controller and the central widget container
@@ -61,8 +59,13 @@ class MainWindow(QMainWindow):
             self.drawerContent.setObjectName("drawerContent")
             self.drawerContent.setVisible(False)
             self.drawerContent.setMinimumSize(300, 200)
-            # Ensure it's positioned correctly initially (might need adjustment if window size changes)
             self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
+
+        # 连接 controller 的解耦信号到 MainWindow 的私有方法
+        if self.controller:
+            self.controller.showDrawerContent.connect(self._on_show_drawer_content)
+            self.controller.hideDrawerContent.connect(self._on_hide_drawer_content)
+            # 如有 updateDrawerContent 信号可按需连接
 
         self._connect_signals()  # Connect signals *after* drawerContent is created
         self._create_tray_icon()  # Create tray icon and menu
@@ -193,8 +196,9 @@ class MainWindow(QMainWindow):
         """Sets the initial window position."""
         self.move(pos)
 
-    def show_drawer_content(self, drawer_data: DrawerDict, target_size: QSize) -> None:
-        """Adjusts window size, positions, updates, and shows the content widget."""
+    # 解耦信号的私有处理方法
+    def _on_show_drawer_content(self, drawer_data: DrawerDict, target_size: QSize) -> None:
+        """响应 controller 的 showDrawerContent 信号，展示内容区域。"""
         folder_path = drawer_data.get("path")
         if not folder_path:
             logging.error(
@@ -202,54 +206,39 @@ class MainWindow(QMainWindow):
             )
             return
 
-        # Ensure drawerContent exists before proceeding
         if not self.drawerContent:
             logging.error("Cannot show drawer content: DrawerContentWidget is None.")
             return
 
-        # 1. Calculate required window size
         required_window_width = (
             self.leftPanel.width() + self.content_spacing + target_size.width()
         )
         required_window_height = max(self.leftPanel.height(), target_size.height())
 
-        # 2. Resize main window first
-        # Check if current size is already sufficient to avoid unnecessary shrinking/growing flicker
         current_geom = self.geometry()
         if (
             current_geom.width() < required_window_width
             or current_geom.height() < required_window_height
         ):
             self.resize(required_window_width, required_window_height)
-        # If window is larger, we might want to keep it larger or shrink it.
-        # For now, let's resize precisely. Consider adding logic if needed.
         elif (
             current_geom.width() > required_window_width
             or current_geom.height() > required_window_height
         ):
             self.resize(required_window_width, required_window_height)
 
-        # 3. Resize and position content widget (check existence)
-        if self.drawerContent:
-            self.drawerContent.resize(target_size)
-            # Ensure positioning happens after potential window resize
-            self.drawerContent.move(
-                self.leftPanel.width() + self.content_spacing, 0
-            )  # Align top
+        self.drawerContent.resize(target_size)
+        self.drawerContent.move(
+            self.leftPanel.width() + self.content_spacing, 0
+        )
+        self.drawerContent.update_content(folder_path)
+        self.drawerContent.setVisible(True)
+        self.drawerContent.raise_()
 
-            # 4. Update content
-            self.drawerContent.update_content(folder_path)  # Pass only the path
-
-            # 5. Make visible
-            self.drawerContent.setVisible(True)
-            self.drawerContent.raise_()  # Ensure it's on top if overlapping somehow
-
-    def hide_drawer_content(self) -> None:
-        """Hides the content widget and resizes the main window."""
+    def _on_hide_drawer_content(self) -> None:
+        """响应 controller 的 hideDrawerContent 信号，隐藏内容区域。"""
         if self.drawerContent and self.drawerContent.isVisible():
             self.drawerContent.setVisible(False)
-            # Resize window back to fit only the left panel
-            # Use fixed size of leftPanel for reliable sizing
             self.resize(self.leftPanel.width(), self.leftPanel.height())
 
     def prompt_for_folder(self) -> Optional[str]:
