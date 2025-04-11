@@ -255,6 +255,61 @@ class AppController(QObject):
 
     # --- Slot Handlers for View Signals ---
 
+    def on_directory_changed(self, path: str):
+        """watchdog通知目录变化，延迟刷新"""
+        from PySide6.QtCore import QTimer
+
+        def refresh():
+            logging.info(f"controller收到目录变化信号，准备刷新: {path}")
+            file_list = self.reload_drawer_content(path)
+            if self._main_view.drawerContent:
+                self._main_view.drawerContent.update_with_file_list(path, file_list)
+
+        QTimer.singleShot(500, refresh)
+
+    def reload_drawer_content(self, drawer_path: str):
+        """同步扫描目录，更新缓存，返回最新文件列表"""
+        from pathlib import Path
+
+        file_list = []
+        try:
+            p = Path(drawer_path)
+            if not p.is_dir():
+                logging.warning(f"路径无效，无法刷新: {drawer_path}")
+                self._preloaded_file_lists[drawer_path] = []
+                return []
+
+            import time
+
+            max_attempts = 5
+            for attempt in range(max_attempts):
+                file_list = []
+                try:
+                    # 延迟200ms等待文件系统稳定
+                    time.sleep(0.2)
+                    for child in p.iterdir():
+                        file_info = {
+                            "path": str(child),
+                            "name": child.name,
+                            "is_dir": child.is_dir(),
+                        }
+                        file_list.append(type("FileInfo", (), file_info)())
+                except Exception as e:
+                    logging.warning(f"扫描目录异常: {e}")
+                    file_list = []
+
+                if file_list:
+                    break  # 扫描到非空，退出循环
+
+            self._preloaded_file_lists[drawer_path] = file_list
+            logging.info(f"同步刷新抽屉内容完成: {drawer_path}, 共{len(file_list)}项")
+            logging.info(f"最终扫描结果: {drawer_path}, 文件数: {len(file_list)}")
+            return file_list
+        except Exception as e:
+            logging.error(f"同步刷新抽屉内容失败: {drawer_path}, 错误: {e}")
+            self._preloaded_file_lists[drawer_path] = []
+            return []
+
     def handle_item_selected(self, item: QListWidgetItem) -> None:
         """
         Handles drawer list item selection and locking logic.

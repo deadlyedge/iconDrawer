@@ -104,6 +104,7 @@ class DrawerContentWidget(QWidget):
         # Explicitly initialize UI elements to None before creation
         self.folder_label: Optional[QLabel] = None
         self.folder_icon_label: Optional[QLabel] = None
+        self.refresh_button: Optional[QPushButton] = None  # Add refresh_button
         self.close_button: Optional[QPushButton] = None
         self.header_layout: Optional[QHBoxLayout] = None
         self.main_visual_container: Optional[QWidget] = None
@@ -219,13 +220,22 @@ class DrawerContentWidget(QWidget):
             self.folder_container, 1
         )  # Add container with stretch
 
+        # Add Refresh Button
+        self.refresh_button = QPushButton("🔄") # Or use an icon
+        self.refresh_button.setObjectName("refreshButton")
+        self.refresh_button.setToolTip("刷新当前文件夹内容")
+        self.refresh_button.clicked.connect(self._refresh_content)
+        self.header_layout.addWidget(self.refresh_button, 0) # Add refresh button without stretch
+
+        # Add Close Button
         self.close_button = QPushButton("X")
         self.close_button.setObjectName("closeButton")
+        self.close_button.setToolTip("关闭抽屉")
         self.close_button.clicked.connect(self.closeRequested.emit)
-        self.header_layout.addWidget(self.close_button, 0)  # Add button without stretch
+        self.header_layout.addWidget(self.close_button, 0)  # Add close button without stretch
 
         # self.available_label_width = calculate_available_label_width(
-        #     self, self.header_layout, self.folder_icon_label, self.close_button
+        #     self, self.header_layout, self.folder_icon_label, self.refresh_button, self.close_button
         # ) # Removed: Calculation moved to _update_folder_label_elided_text
 
         return self.header_layout
@@ -235,65 +245,62 @@ class DrawerContentWidget(QWidget):
         更新显示的文件夹路径及内容
         Uses preloaded list and async icon loading.
         """
+        preloaded_list = None
+        if self.controller:
+            preloaded_list = self.controller.get_preloaded_file_list(folder_path)
+        self.update_with_file_list(folder_path, preloaded_list)
+
+    def update_with_file_list(self, folder_path: str, file_list: Optional[List]) -> None:
+        """
+        使用提供的文件列表刷新内容
+        """
         self.current_folder = folder_path
         if self.folder_label:
-            self.folder_label.setText(folder_path)  # Show full path initially
+            self.folder_label.setText(folder_path)
             self.folder_label.setToolTip(folder_path)
-        # Clear grid first
+
         self.clear_grid()
         self.items.clear()
-        # Cancel any pending icon loads for the previous folder? Maybe not necessary.
 
-        if not self.controller:
-            logging.error("Controller not available in DrawerContentWidget.")
-            return
-
-        preloaded_list = self.controller.get_preloaded_file_list(folder_path)
-
-        if preloaded_list is None:
-            # Data not yet loaded, show a loading message or wait?
-            # For now, just clear and return, or show a label.
-            logging.info(f"Preloaded list for {folder_path} not ready yet.")
-            # Optionally add a loading label to the grid
+        if file_list is None:
+            logging.info(f"文件列表为空，显示加载中: {folder_path}")
             loading_label = QLabel("正在加载...")
             loading_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             if self.grid_layout:
                 self.grid_layout.addWidget(loading_label, 0, 0)
-            return  # Or maybe disable interaction?
+            return
 
-        if not preloaded_list:
-            # Empty folder or error during preload
-            logging.info(f"Preloaded list for {folder_path} is empty.")
-            # Update folder label elided text even for empty folders
+        if not file_list:
+            logging.info(f"文件列表为空或目录为空: {folder_path}")
             self._update_folder_label_elided_text()
-            return  # Grid is already cleared
+            return
 
-        # --- Populate with Placeholders ---
         try:
-            for file_info in preloaded_list:
-                # Use placeholder icons initially
+            for file_info in file_list:
                 placeholder_icon = (
                     self.placeholder_folder_icon
                     if file_info.is_dir
                     else self.placeholder_file_icon
                 )
                 if not placeholder_icon:
-                    placeholder_icon = QIcon()  # Fallback
+                    placeholder_icon = QIcon()
 
                 container_widget = self._create_file_item_placeholder(
                     file_info, placeholder_icon
                 )
                 self.items.append(container_widget)
 
-            self.relayout_grid()  # Layout with placeholders
-            self._update_folder_label_elided_text()  # Update label after layout
-
-            # --- Start Async Icon Loading ---
+            self.relayout_grid()
+            self._update_folder_label_elided_text()
             self._start_async_icon_loading()
 
-        except Exception as e:  # Catch potential errors during item creation
+        except Exception as e:
             logging.error(f"Error creating file items for {folder_path}: {e}")
             QMessageBox.critical(self, "错误", f"创建文件项时出错: {e!s}")
+
+        # 强制刷新界面
+        self.update()
+        self.repaint()
 
     def _start_async_icon_loading(self):
         """Starts background tasks to load real icons for visible items."""
@@ -333,6 +340,28 @@ class DrawerContentWidget(QWidget):
         # Or just log the error.
         logging.warning(f"Failed to load icon for {file_path}: {error_message}")
         # Optionally update the widget with an 'error' icon?
+
+    def _refresh_content(self) -> None:
+        """
+        刷新当前文件夹的内容
+        强制重新扫描当前文件夹并刷新内容，绕过预加载缓存。
+        """
+        if self.current_folder and self.controller:
+            logging.info(f"Force refreshing content for: {self.current_folder}")
+            try:
+                # Directly call the controller's synchronous reload method
+                new_file_list = self.controller.reload_drawer_content(self.current_folder)
+                # Update the view with the newly fetched list
+                self.update_with_file_list(self.current_folder, new_file_list)
+                logging.info(f"Force refresh complete for: {self.current_folder}")
+            except Exception as e:
+                logging.error(f"Error during force refresh for {self.current_folder}: {e}")
+                QMessageBox.warning(self, "刷新错误", f"刷新文件夹时出错:\n{e!s}")
+        elif not self.current_folder:
+            logging.warning("Cannot refresh, current_folder is not set.")
+        elif not self.controller:
+             logging.error("Cannot refresh, controller is not available.")
+
 
     def open_current_folder(self) -> None:
         """
@@ -476,14 +505,15 @@ class DrawerContentWidget(QWidget):
             or not self.folder_label
             or not self.header_layout
             or not self.folder_icon_label
+            or not self.refresh_button # Add check for refresh_button
             or not self.close_button
         ):
             return
 
         try:
-            # Calculate available width dynamically each time
+            # Calculate available width dynamically each time, considering both buttons
             available_width = calculate_available_label_width(
-                self, self.header_layout, self.folder_icon_label, self.close_button
+                self, self.header_layout, self.folder_icon_label, self.refresh_button, self.close_button
             )
 
             fm = QFontMetrics(self.folder_label.font())

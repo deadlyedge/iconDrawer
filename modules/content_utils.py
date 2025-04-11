@@ -43,13 +43,13 @@ def truncate_text(text: str, label: QLabel, available_width: int) -> str:
     return truncated_text
 
 
-def calculate_available_label_width(container_widget: QWidget, header_layout: QHBoxLayout, icon_label: QLabel, close_button: QPushButton) -> int:
+def calculate_available_label_width(container_widget: QWidget, header_layout: QHBoxLayout, icon_label: QLabel, refresh_button: QPushButton, close_button: QPushButton) -> int:
     """
     计算 header 中 folder_label 的可用宽度。
-    需要传入主容器、头部布局以及头部内的图标和按钮部件。
+    需要传入主容器、头部布局以及头部内的图标、刷新按钮和关闭按钮部件。
     """
     # Restore original calculation:
-    if not container_widget or not header_layout or not icon_label or not close_button:
+    if not container_widget or not header_layout or not icon_label or not refresh_button or not close_button: # Added refresh_button check
         logging.warning("calculate_available_label_width: Missing required widgets/layout.")
         return 100 # Default if widgets are missing
 
@@ -59,8 +59,10 @@ def calculate_available_label_width(container_widget: QWidget, header_layout: QH
     header_available_width = header_total_width - header_margins.left() - header_margins.right()
 
     # Get widths of fixed elements and spacing within the header layout
-    button_width = close_button.sizeHint().width() if close_button.width() <= 0 else close_button.width()
-    header_spacing = header_layout.spacing() # Space between folder_container and close_button
+    refresh_button_width = refresh_button.sizeHint().width() if refresh_button.width() <= 0 else refresh_button.width()
+    close_button_width = close_button.sizeHint().width() if close_button.width() <= 0 else close_button.width()
+    # header_spacing applies between folder_container and refresh_button, and between refresh_button and close_button
+    header_spacing = header_layout.spacing()
 
     # Get widths/spacing within the folder_container (which holds the icon and label)
     folder_container = icon_label.parentWidget()
@@ -79,15 +81,18 @@ def calculate_available_label_width(container_widget: QWidget, header_layout: QH
 
     # Calculate available width for the label directly
     # Total header available width
+    # - Width of refresh button
     # - Width of close button
-    # - Space between folder_container and close_button
+    # - Space between folder_container and refresh_button
+    # - Space between refresh_button and close_button
     # - Left margin inside folder_container
     # - Width of icon inside folder_container
     # - Space between icon and label inside folder_container
     # - Right margin inside folder_container
     available_width = (header_available_width -
-                       button_width -
-                       header_spacing -
+                       refresh_button_width - # Use refresh button width
+                       close_button_width -   # Use close button width
+                       header_spacing * 2 -   # Two spaces: container-refresh, refresh-close
                        folder_margins.left() -
                        icon_width -
                        folder_spacing -
