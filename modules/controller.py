@@ -221,10 +221,7 @@ class AppController(QObject):
 
     def on_directory_changed(self, path: str):
         """目录变动时，直接刷新当前内容，和刷新按钮完全一致。"""
-        logging.critical(f"!!!!!! on_directory_changed TRIGGERED for path: {path} !!!!!!")
-        if self._main_view.drawerContent:
-            self._main_view.drawerContent.update_content(path)
-
+        self.updateDrawerContent.emit(path)
 
     def handle_item_selected(self, item: QListWidgetItem) -> None:
         """
@@ -305,18 +302,14 @@ class AppController(QObject):
                 self._locked_item_data = (
                     current_drawer_config if current_drawer_config else drawer_data
                 )  # Store the latest config
-                self.showDrawerContent.emit(
-                    self._locked_item_data, target_content_size
-                )
+                self.showDrawerContent.emit(self._locked_item_data, target_content_size)
         else:
             # Case C: Not locked -> Lock and show the selected item
             self._locked = True
             self._locked_item_data = (
                 current_drawer_config if current_drawer_config else drawer_data
             )  # Store the latest config
-            self.showDrawerContent.emit(
-                self._locked_item_data, target_content_size
-            )
+            self.showDrawerContent.emit(self._locked_item_data, target_content_size)
 
     def handle_selection_cleared(self) -> None:
         """Hides content view if not locked."""

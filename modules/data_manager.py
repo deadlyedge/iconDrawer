@@ -205,7 +205,7 @@ class DataManager(QObject):
                 if file_list:
                     break
             self._file_cache[drawer_path] = file_list
-            logging.info(f"同步刷新抽屉内容完成: {drawer_path}, 共{len(file_list)}项")
+            logging.debug(f"同步刷新抽屉内容完成: {drawer_path}, 共{len(file_list)}项")
             return file_list
         except Exception as e:
             logging.error(f"同步刷新抽屉内容失败: {drawer_path}, 错误: {e}")

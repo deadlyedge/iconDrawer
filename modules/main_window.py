@@ -18,6 +18,7 @@ import logging  # Import logging
 from modules.settings_manager import DrawerDict  # Import SettingsManager
 from modules.list import DrawerListWidget
 from modules.content import DrawerContentWidget
+from modules.content_utils import IDrawerContent
 from modules.drag_area import DragArea
 from modules.settings_dialog import SettingsDialog  # Import SettingsDialog
 
@@ -65,7 +66,7 @@ class MainWindow(QMainWindow):
         if self.controller:
             self.controller.showDrawerContent.connect(self._on_show_drawer_content)
             self.controller.hideDrawerContent.connect(self._on_hide_drawer_content)
-            # 如有 updateDrawerContent 信号可按需连接
+            self.controller.updateDrawerContent.connect(self._on_update_drawer_content)
 
         self._connect_signals()  # Connect signals *after* drawerContent is created
         self._create_tray_icon()  # Create tray icon and menu
@@ -127,8 +128,8 @@ class MainWindow(QMainWindow):
     def _setup_right_panel(self) -> None:
         """Prepares variables related to the right content panel."""
         # DrawerContentWidget creation moved to __init__ after controller exists.
-        # Initialize attribute to None here for clarity
-        self.drawerContent: Optional[DrawerContentWidget] = None
+        # 支持多实现：只依赖 IDrawerContent 协议
+        self.drawerContent: Optional[IDrawerContent] = None
         self.content_spacing = 5
 
     def _connect_signals(self) -> None:
@@ -197,7 +198,9 @@ class MainWindow(QMainWindow):
         self.move(pos)
 
     # 解耦信号的私有处理方法
-    def _on_show_drawer_content(self, drawer_data: DrawerDict, target_size: QSize) -> None:
+    def _on_show_drawer_content(
+        self, drawer_data: DrawerDict, target_size: QSize
+    ) -> None:
         """响应 controller 的 showDrawerContent 信号，展示内容区域。"""
         folder_path = drawer_data.get("path")
         if not folder_path:
@@ -228,9 +231,7 @@ class MainWindow(QMainWindow):
             self.resize(required_window_width, required_window_height)
 
         self.drawerContent.resize(target_size)
-        self.drawerContent.move(
-            self.leftPanel.width() + self.content_spacing, 0
-        )
+        self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
         self.drawerContent.update_content(folder_path)
         self.drawerContent.setVisible(True)
         self.drawerContent.raise_()
@@ -240,6 +241,11 @@ class MainWindow(QMainWindow):
         if self.drawerContent and self.drawerContent.isVisible():
             self.drawerContent.setVisible(False)
             self.resize(self.leftPanel.width(), self.leftPanel.height())
+
+    def _on_update_drawer_content(self, path: str) -> None:
+        """响应 controller 的 updateDrawerContent 信号，刷新内容区域。"""
+        if self.drawerContent:
+            self.drawerContent.update_content(path)
 
     def prompt_for_folder(self) -> Optional[str]:
         """Shows a dialog to select a folder and returns the path."""

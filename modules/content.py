@@ -85,6 +85,21 @@ class DrawerContentWidget(QWidget):
     sizeChanged = Signal(QSize)
     resizeFinished = Signal()
 
+    def resize(self, size: QSize) -> None:
+        super().resize(size)
+
+    def move(self, x: int, y: int) -> None:
+        super().move(x, y)
+
+    def setVisible(self, visible: bool) -> None:
+        super().setVisible(visible)
+
+    def setObjectName(self, name: str) -> None:
+        super().setObjectName(name)
+
+    def setMinimumSize(self, w: int, h: int) -> None:
+        super().setMinimumSize(w, h)
+
     # Modify __init__ to accept the controller
     def __init__(
         self, controller: "AppController", parent: Optional[QWidget] = None
@@ -232,7 +247,9 @@ class DrawerContentWidget(QWidget):
         self.close_button.setObjectName("closeButton")
         self.close_button.setToolTip("关闭抽屉")
         self.close_button.clicked.connect(self.closeRequested.emit)
-        self.header_layout.addWidget(self.close_button, 0)  # Add close button without stretch
+        self.header_layout.addWidget(
+            self.close_button, 0
+        )  # Add close button without stretch
 
         # self.available_label_width = calculate_available_label_width(
         #     self, self.header_layout, self.folder_icon_label, self.refresh_button, self.close_button
@@ -240,18 +257,20 @@ class DrawerContentWidget(QWidget):
 
         return self.header_layout
 
-    def update_content(self, folder_path: str) -> None:
+    def update_content(self, path: str) -> None:
         """
         更新显示的文件夹路径及内容，始终同步刷新缓存，避免卡在“正在加载...”
         """
         file_list = None
         if self.controller:
             # 先同步刷新缓存，再取最新数据
-            self.controller.data_manager.reload_drawer_content(folder_path)
-            file_list = self.controller.get_preloaded_file_list(folder_path)
-        self.update_with_file_list(folder_path, file_list)
+            self.controller.data_manager.reload_drawer_content(path)
+            file_list = self.controller.get_preloaded_file_list(path)
+        self.update_with_file_list(path, file_list)
 
-    def update_with_file_list(self, folder_path: str, file_list: Optional[List]) -> None:
+    def update_with_file_list(
+        self, folder_path: str, file_list: Optional[List]
+    ) -> None:
         """
         使用提供的文件列表刷新内容
         """
@@ -272,7 +291,7 @@ class DrawerContentWidget(QWidget):
             return
 
         if not file_list:
-            logging.info(f"文件列表为空或目录为空: {folder_path}")
+            logging.debug(f"文件列表为空或目录为空: {folder_path}")
             self._update_folder_label_elided_text()
             return
 
@@ -351,18 +370,21 @@ class DrawerContentWidget(QWidget):
             logging.info(f"Force refreshing content for: {self.current_folder}")
             try:
                 # 通过 DataManager 强制同步刷新
-                new_file_list = self.controller.data_manager.reload_drawer_content(self.current_folder)
+                new_file_list = self.controller.data_manager.reload_drawer_content(
+                    self.current_folder
+                )
                 # Update the view with the newly fetched list
                 self.update_with_file_list(self.current_folder, new_file_list)
                 logging.info(f"Force refresh complete for: {self.current_folder}")
             except Exception as e:
-                logging.error(f"Error during force refresh for {self.current_folder}: {e}")
+                logging.error(
+                    f"Error during force refresh for {self.current_folder}: {e}"
+                )
                 QMessageBox.warning(self, "刷新错误", f"刷新文件夹时出错:\n{e!s}")
         elif not self.current_folder:
             logging.warning("Cannot refresh, current_folder is not set.")
         elif not self.controller:
-             logging.error("Cannot refresh, controller is not available.")
-
+            logging.error("Cannot refresh, controller is not available.")
 
     def open_current_folder(self) -> None:
         """
@@ -506,7 +528,7 @@ class DrawerContentWidget(QWidget):
             or not self.folder_label
             or not self.header_layout
             or not self.folder_icon_label
-            or not self.refresh_button # Add check for refresh_button
+            or not self.refresh_button  # Add check for refresh_button
             or not self.close_button
         ):
             return
@@ -514,7 +536,11 @@ class DrawerContentWidget(QWidget):
         try:
             # Calculate available width dynamically each time, considering both buttons
             available_width = calculate_available_label_width(
-                self, self.header_layout, self.folder_icon_label, self.refresh_button, self.close_button
+                self,
+                self.header_layout,
+                self.folder_icon_label,
+                self.refresh_button,
+                self.close_button,
             )
 
             fm = QFontMetrics(self.folder_label.font())
