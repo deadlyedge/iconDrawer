@@ -257,14 +257,42 @@ class AppController(QObject):
 
     def on_directory_changed(self, path: str):
         """watchdog通知目录变化，延迟刷新"""
+        # --- DIAGNOSTIC LOG ---
+        logging.critical(f"!!!!!! on_directory_changed TRIGGERED for path: {path} !!!!!!")
+        # --- END DIAGNOSTIC LOG ---
+
         from PySide6.QtCore import QTimer
 
         def refresh():
-            logging.info(f"controller收到目录变化信号，准备刷新: {path}")
+            logging.info(f"Controller received directory change signal, preparing refresh for: {path}")
+            # Step 1: Always reload content to update the cache
             file_list = self.reload_drawer_content(path)
-            if self._main_view.drawerContent:
-                self._main_view.drawerContent.update_with_file_list(path, file_list)
 
+            # Step 2: Check if the changed path is the currently locked/displayed drawer
+            is_currently_displayed = False
+            if self._locked and self._locked_item_data:
+                locked_path_raw = self._locked_item_data.get("path")
+                if locked_path_raw:
+                    # Normalize both paths before comparison
+                    normalized_locked_path = os.path.normcase(os.path.normpath(locked_path_raw))
+                    normalized_changed_path = os.path.normcase(os.path.normpath(path))
+                    logging.debug(f"Comparing normalized paths: Locked='{normalized_locked_path}', Changed='{normalized_changed_path}'")
+                    if normalized_locked_path == normalized_changed_path:
+                        is_currently_displayed = True
+                else:
+                    logging.warning("Locked item data exists but has no path.")
+
+
+            # Step 3: Only update the visible drawer content if it matches the changed path
+            if is_currently_displayed and self._main_view.drawerContent:
+                logging.info(f"Changed path {path} is currently displayed. Updating view.")
+                self._main_view.drawerContent.update_with_file_list(path, file_list)
+            elif is_currently_displayed:
+                 logging.warning(f"Changed path {path} is locked, but drawerContent is not available for update.")
+            else:
+                logging.info(f"Changed path {path} is not currently displayed. Cache updated silently.")
+
+        # Use a timer to debounce filesystem events
         QTimer.singleShot(500, refresh)
 
     def reload_drawer_content(self, drawer_path: str):
