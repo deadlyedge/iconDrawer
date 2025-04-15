@@ -37,6 +37,7 @@ class SettingsDialog(QDialog):
         parent: Optional["MainWindow"] = None,
     ) -> None:
         super().__init__(parent)
+        self.setObjectName("settingsDialog")
         self.settings_manager = settings_manager
         self.main_window_ref: Optional["MainWindow"] = (
             parent  # Keep a reference if needed

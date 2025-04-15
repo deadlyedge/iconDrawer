@@ -14,6 +14,7 @@ class CustomSizeGrip(QWidget):
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
+        self.setObjectName("sizeGrip")
         self.setFixedSize(16, 16)  # 设置手柄的固定大小
         self.setCursor(Qt.CursorShape.SizeFDiagCursor)
         # self.setStyleSheet("border-bottom-right-radius: 5px")

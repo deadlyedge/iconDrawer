@@ -17,6 +17,7 @@ class DragArea(QWidget):
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+        self.setObjectName("dragArea")
         self._dragPos: Optional[QPoint] = None
 
         layout = QHBoxLayout(self)
@@ -24,6 +25,7 @@ class DragArea(QWidget):
         layout.setSpacing(10)
 
         self.dragLabel = QLabel("☰ Drag Area ☰", self)
+        self.dragLabel.setObjectName("dragLabel")
         layout.addWidget(self.dragLabel)
 
         layout.addStretch()

@@ -6,7 +6,6 @@ from typing import (
     Callable,
     TYPE_CHECKING,
     List,
-    Dict,
 )  # Ensure List, Dict are imported
 
 from PySide6.QtWidgets import (
@@ -24,7 +23,6 @@ from PySide6.QtWidgets import (
 # logging is imported above
 from PySide6.QtGui import (
     QIcon,
-    QPixmap,  # Add QPixmap
     QDesktopServices,
     QFontMetrics,
     QResizeEvent,
@@ -40,7 +38,6 @@ from PySide6.QtCore import (
     QSize,
     QUrl,
     Signal,
-    QObject,
     QThreadPool,
     Slot,
 )
@@ -52,7 +49,6 @@ from .content_utils import calculate_available_label_width, truncate_text
 # 引入拆分后的异步加载和文件项模块
 from .icon_loader import IconWorkerSignals, IconLoadWorker
 from .file_item import FileIconWidget
-from .icon_utils import get_icon_for_path
 
 # Forward declare AppController 和 FileInfo
 if TYPE_CHECKING:
@@ -156,6 +152,7 @@ class DrawerContentWidget(QWidget):
         初始化主视觉容器，包括头部、滚动区域和大小调整手柄
         """
         self.main_visual_container = QWidget(self)
+        self.main_visual_container.setObjectName("drawerContentContainer")
         self.main_visual_container.setProperty("isDrawerContentContainer", True)
 
         outer_layout = QVBoxLayout(self)
@@ -170,17 +167,20 @@ class DrawerContentWidget(QWidget):
         container_layout.addLayout(header_layout, 0, 0)
 
         self.scroll_area = QScrollArea()
+        self.scroll_area.setObjectName("scrollArea")
         self.scroll_area.setWidgetResizable(True)
         self.scroll_area.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
         self.scroll_widget = QWidget()
+        self.scroll_widget.setObjectName("scrollWidget")
         self.grid_layout = QGridLayout(self.scroll_widget)
         self.grid_layout.setSpacing(5)
         self.scroll_area.setWidget(self.scroll_widget)
         container_layout.addWidget(self.scroll_area, 1, 0)
 
         self.size_grip = CustomSizeGrip(self.main_visual_container)
+        self.size_grip.setObjectName("sizeGrip")
         self.size_grip.resizeFinished.connect(self.resizeFinished.emit)
         container_layout.addWidget(
             self.size_grip,
@@ -211,6 +211,7 @@ class DrawerContentWidget(QWidget):
         folder_layout.setContentsMargins(0, 0, 0, 0)
 
         self.folder_icon_label = QLabel(self.folder_container)
+        self.folder_icon_label.setObjectName("folderIconLabel")
         # Use icon_provider via controller to get the folder icon, with fallback
         folder_icon = QIcon()  # Default empty icon
         if self.controller and self.controller.icon_provider:
@@ -225,6 +226,7 @@ class DrawerContentWidget(QWidget):
         self.folder_label = QLabel(
             "", self.folder_container
         )  # Initialize with empty string
+        self.folder_label.setObjectName("folderLabel")
         # Use default size policy for label, let container handle expansion
         folder_layout.addWidget(
             self.folder_label, 1, Qt.AlignmentFlag.AlignLeft
@@ -351,7 +353,7 @@ class DrawerContentWidget(QWidget):
                     f"Ignoring loaded icon for {widget.file_path} as folder changed."
                 )
         else:
-            logging.debug(f"Ignoring loaded icon for widget not found or invalid type.")
+            logging.debug("Ignoring loaded icon for widget not found or invalid type.")
 
     @Slot(str, str)
     def _on_icon_load_error(self, file_path: str, error_message: str):
@@ -418,7 +420,7 @@ class DrawerContentWidget(QWidget):
                 Qt.TransformationMode.SmoothTransformation,
             )
         icon_label.setPixmap(pixmap)
-        icon_label.setStyleSheet("background-color: transparent;")
+        # icon_label.setStyleSheet("background-color: transparent;")
         container_widget.icon_label = icon_label  # Store reference in widget
 
         # --- Text Label ---
@@ -430,7 +432,7 @@ class DrawerContentWidget(QWidget):
         display_text = truncate_text(file_info.name, text_label, text_available_width)
         text_label.setText(display_text)
         text_label.setToolTip(file_info.name)  # Tooltip is the name
-        text_label.setStyleSheet("background-color: transparent;")
+        # text_label.setStyleSheet("background-color: transparent;")
 
         # --- Add to Layout ---
         container_widget.content_layout.addWidget(

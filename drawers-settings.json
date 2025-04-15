@@ -4,8 +4,8 @@
       "name": "3x",
       "path": "D:\\users\\Desktop\\3x",
       "size": {
-        "width": 604,
-        "height": 549
+        "width": 608,
+        "height": 555
       }
     },
     {
@@ -20,8 +20,8 @@
       "name": "mkvtoolnix",
       "path": "D:\\users\\Desktop\\mkvtoolnix",
       "size": {
-        "width": 644,
-        "height": 514
+        "width": 478,
+        "height": 551
       }
     },
     {
@@ -36,14 +36,14 @@
       "name": "桌面抽屉",
       "path": "D:\\users\\Documents\\桌面抽屉",
       "size": {
-        "width": 527,
-        "height": 367
+        "width": 476,
+        "height": 380
       }
     }
   ],
   "window_position": {
-    "x": 181,
-    "y": 110
+    "x": 312,
+    "y": 180
   },
   "background_color_hsla": [
     188,

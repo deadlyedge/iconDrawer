@@ -82,7 +82,7 @@ class MainWindow(QMainWindow):
         self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         self.setWindowFlag(Qt.WindowType.Tool, True)
         # Set object name for styling
-        self.setObjectName("mainWindow")  # Or set on centralWidget if preferred
+        self.setObjectName("mainWindow")
 
     def _setup_ui(self) -> None:
         """Sets up the main UI layout and widgets."""
@@ -113,9 +113,11 @@ class MainWindow(QMainWindow):
         leftLayout.setSpacing(0)
 
         self.dragArea = DragArea(self.leftPanel)
+        self.dragArea.setObjectName("dragArea")
         leftLayout.addWidget(self.dragArea)
 
         self.drawerList = DrawerListWidget(self.leftPanel)
+        self.drawerList.setObjectName("drawerList")
         self.drawerList.setFixedSize(210, 240)
         leftLayout.addWidget(self.drawerList)
 
@@ -381,10 +383,10 @@ class MainWindow(QMainWindow):
 
         # 创建上下文菜单
         self.tray_menu = QMenu(self)
+        self.tray_menu.setObjectName("trayMenu")
         self.tray_menu.setStyleSheet(
             "background-color: rgba(50, 50, 50, 200); border: 1px solid #424242;"
         )  # 设置更深的背景色和边框
-        self.tray_menu = QMenu(self)
         show_hide_action = QAction("显示/隐藏", self)
         quit_action = QAction("退出", self)
 

@@ -10,11 +10,13 @@ class FileIconWidget(QWidget):
     """
     def __init__(self, file_path: str, is_dir: bool, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
+        self.setObjectName("fileItem")
         self.file_path = file_path
         self.is_dir = is_dir
         self.icon_label: Optional[QLabel] = None  # 用于显示图标的标签
 
         self.visual_container = QWidget(self)
+        self.visual_container.setObjectName("visualContainer")
         self.visual_container.setProperty("isVisualContainer", True)
 
         layout = QVBoxLayout(self)

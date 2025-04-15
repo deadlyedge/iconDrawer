@@ -6,33 +6,33 @@ QWidget {
 	border: none; /* Remove borders by default */
 }
 
-QMainWindow {
+/* 主窗口 */
+QMainWindow#mainWindow {
 	background-color: transparent; /* Keep main window transparent if needed */
 	border-radius: 5px;
 }
 
-/* Style for the main panels */
-#leftPanel {
-	/* Assuming you might set objectName="leftPanel" */
+/* 左侧面板 */
+QWidget#leftPanel {
 	/* background-color removed - will be set dynamically */
 	border-radius: 5px; /* Rounded corners */
 }
 
-/* Style for the main visual container within DrawerContentWidget */
+/* 内容区域容器 */
 QWidget[isDrawerContentContainer="true"] {
 	/* background-color removed - will be set dynamically */
 	border-radius: 5px;
 	border: 1px solid #424242; /* Subtle border */
 }
 
-/* Style for the custom DragArea */
-DragArea {
+/* 拖拽区域 */
+DragArea#dragArea {
 	background-color: rgba(0, 0, 0, 180); /* Semi-transparent black */
 	border-top-left-radius: 5px; /* Match panel rounding */
 	border-top-right-radius: 5px;
 }
 
-DragArea QLabel {
+DragArea#dragArea QLabel {
 	/* Hamburger icon */
 	background-color: transparent;
 	font-size: 12px; /* Adjusted size */
@@ -40,64 +40,8 @@ DragArea QLabel {
 	padding: 5px;
 }
 
-DragArea QPushButton {
-	/* Settings button */
-	background-color: transparent;
-	border: none;
-	color: #bdbdbd;
-	padding: 5px;
-}
-
-DragArea QPushButton:hover {
-	color: #ffffff; /* White on hover */
-	background-color: rgba(255, 255, 255, 30); /* Subtle highlight */
-	border-radius: 3px;
-}
-
-/* Style for the DrawerListWidget */
-DrawerListWidget {
-	/* background-color: #1c1c1c; /* Removed - Should inherit from leftPanel */
-	border: none;
-	border-bottom-left-radius: 5px; /* Match panel rounding */
-	border-bottom-right-radius: 5px;
-}
-
-DrawerListWidget::item {
-	padding: 8px 12px; /* More padding */
-	color: #e0e0e0;
-	border-bottom: 1px solid #424242; /* Separator */
-}
-
-DrawerListWidget::item:selected {
-	background-color: hsla(212, 100%, 50%, 0.6); /* Blue selection color */
-	color: #ffffff;
-}
-
-DrawerListWidget::item:hover {
-	background-color: #4a4a4a; /* Grey hover */
-}
-
-/* Style for the Add Drawer Button */
-QPushButton#addButton {
-	/* Assuming objectName="addButton" */
-	background-color: hsla(0, 0%, 0%, 0.5);
-	color: #ffffff;
-	padding: 8px;
-	border-radius: 3px;
-	margin: 5px; /* Add some margin */
-}
-
-QPushButton#addButton:hover {
-	background-color: hsla(0, 0%, 20%, 0.8); /* Darker blue on hover */
-}
-
-QPushButton#addButton:pressed {
-	background-color: #004c8c; /* Even darker when pressed */
-}
-
-/* Style for the Add Drawer Button */
+/* 设置按钮 */
 QPushButton#settingsButton {
-	/* Assuming objectName="settingsButton" */
 	background-color: hsla(0, 0%, 0%, 0.5);
 	color: #ffffff;
 	padding: 2px;
@@ -113,32 +57,114 @@ QPushButton#settingsButton:pressed {
 	background-color: #004c8c; /* Even darker when pressed */
 }
 
-/* Style for DrawerContentWidget items (basic) */
-/* Removing the broad QWidget rule as it conflicts with container background */
-/* DrawerContentWidget QWidget { */
-/* background-color: #1c1c1c; */
-/* } */
+/* 抽屉列表 */
+DrawerListWidget#drawerList {
+	/* background-color: #1c1c1c; /* Removed - Should inherit from leftPanel */
+	border: none;
+	border-bottom-left-radius: 5px; /* Match panel rounding */
+	border-bottom-right-radius: 5px;
+}
 
-DrawerContentWidget QLabel {
+DrawerListWidget#drawerList::item {
+	padding: 8px 12px; /* More padding */
+	color: #e0e0e0;
+	border-bottom: 1px solid #424242; /* Separator */
+}
+
+DrawerListWidget#drawerList::item:selected {
+	background-color: hsla(212, 100%, 50%, 0.6); /* Blue selection color */
+	color: #ffffff;
+}
+
+DrawerListWidget#drawerList::item:hover {
+	background-color: #4a4a4a; /* Grey hover */
+}
+
+/* 添加按钮 */
+QPushButton#addButton {
+	background-color: hsla(0, 0%, 0%, 0.5);
+	color: #ffffff;
+	padding: 8px;
+	border-radius: 3px;
+	margin: 5px; /* Add some margin */
+}
+
+QPushButton#addButton:hover {
+	background-color: hsla(0, 0%, 20%, 0.8); /* Darker blue on hover */
+}
+
+QPushButton#addButton:pressed {
+	background-color: #004c8c; /* Even darker when pressed */
+}
+
+/* 内容区域 */
+DrawerContentWidget#drawerContent QLabel {
 	background-color: transparent;
 	color: #e0e0e0;
 }
 
-DrawerContentWidget QVBoxLayout {
-	background-color: #005fa3;
-	/* border-radius: 5px; */
+/* 文件夹路径标签 */
+QLabel#folderLabel {
+	background-color: transparent;
+	color: #e0e0e0;
 }
 
-DrawerContentWidget QHBoxLayout {
+/* 文件夹图标标签 */
+QLabel#folderIconLabel {
 	background-color: transparent;
 }
 
-/* Style for ScrollArea and ScrollBar */
-QScrollArea {
+/* 刷新按钮 */
+QPushButton#refreshButton {
+	background-color: #555555;
+	color: #ffffff;
+	border-radius: 6px;
+	font-weight: bold;
+	font-size: 8pt;
+	min-width: 12px;
+	min-height: 12px;
+	max-width: 12px;
+	max-height: 12px;
+	padding: 0px;
+}
+
+QPushButton#refreshButton:hover {
+	background-color: #6666ff; /* Blueish on hover */
+}
+
+QPushButton#refreshButton:pressed {
+	background-color: #0000cc; /* Darker blue when pressed */
+}
+
+/* 关闭按钮 */
+QPushButton#closeButton {
+	background-color: #555555;
+	color: #ffffff;
+	border-radius: 6px;
+	font-weight: bold;
+	font-size: 8pt;
+	min-width: 12px;
+	min-height: 12px;
+	max-width: 12px;
+	max-height: 12px;
+	padding: 0px;
+}
+
+QPushButton#closeButton:hover {
+	background-color: #ff6666; /* Reddish on hover */
+}
+
+QPushButton#closeButton:pressed {
+	background-color: #cc0000; /* Darker red when pressed */
+}
+
+/* 滚动区域 */
+QScrollArea#scrollArea {
 	border: none;
 	background-color: transparent;
 }
 
+/* 滚动条样式 */
 QScrollBar:vertical {
 	border: none;
 	background: transparent; /* Scrollbar track color */
@@ -164,55 +190,12 @@ QScrollBar::sub-page:vertical {
 	background: none;
 }
 
-/* Style for the close button in DrawerContentWidget */
-DrawerContentWidget QPushButton {
-	/* Might need objectName for specificity */
-	background-color: #555555;
-	color: #ffffff;
-	border-radius: 6px; /* Make it round */
-	font-weight: bold;
-	font-size: 8pt;
-	min-width: 12px; /* Ensure size */
-	min-height: 12px;
-	max-width: 12px;
-	max-height: 12px;
-	padding: 0px; /* Adjust padding if needed */
-}
-
-DrawerContentWidget QPushButton:hover {
-	background-color: #ff6666; /* Reddish on hover */
-}
-
-DrawerContentWidget QPushButton:pressed {
-	background-color: #cc0000; /* Darker red when pressed */
-}
-
-/* Style for Dialogs (basic) */
-QDialog {
-	background-color: #3c3c3c;
-}
-
-QDialog QLabel {
+/* 大小调整手柄 */
+CustomSizeGrip#sizeGrip {
 	background-color: transparent;
 }
 
-QDialogButtonBox QPushButton {
-	background-color: #007acc;
-	color: #ffffff;
-	padding: 5px 15px;
-	border-radius: 3px;
-	min-width: 60px;
-}
-
-QDialogButtonBox QPushButton:hover {
-	background-color: #005fa3;
-}
-
-QDialogButtonBox QPushButton:pressed {
-	background-color: #004c8c;
-}
-
-/* Style for the visual container within FileIconWidget using custom property */
+/* 文件图标部件 */
 QWidget[isVisualContainer="true"] {
 	background-color: transparent;
 	border-radius: 2px;
@@ -223,6 +206,51 @@ QWidget[isVisualContainer="true"]:hover {
 	background-color: rgba(230, 230, 230, 128); /* Semi-transparent light grey */
 }
 
+/* 设置对话框 */
+QDialog#settingsDialog {
+	background-color: #3c3c3c;
+}
+
+QDialog#settingsDialog QLabel {
+	background-color: transparent;
+}
+
+QDialog#settingsDialog QDialogButtonBox QPushButton {
+	background-color: #007acc;
+	color: #ffffff;
+	padding: 5px 15px;
+	border-radius: 3px;
+	min-width: 60px;
+}
+
+QDialog#settingsDialog QDialogButtonBox QPushButton:hover {
+	background-color: #005fa3;
+}
+
+QDialog#settingsDialog QDialogButtonBox QPushButton:pressed {
+	background-color: #004c8c;
+}
+
+/* 系统托盘菜单 */
+QMenu#trayMenu {
+	background-color: rgba(50, 50, 50, 200);
+	border: 1px solid #424242;
+}
+
+QMenu#trayMenu QAction {
+	color: #e0e0e0;
+}
+
+QMenu#trayMenu QAction:hover {
+	background-color: rgba(255, 255, 255, 30);
+}
+
+/* 文件夹路径容器 */
+QWidget[isFolderPathLayout="true"] {
+	background-color: transparent;
+}
+
+/* 文件夹路径按钮 */
 QPushButton[isFolderPathButton="true"] {
 	border: none;
 }
