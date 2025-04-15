@@ -4,14 +4,20 @@ from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import QIcon
 from .icon_utils import get_icon_for_path
 
+
 class IconWorkerSignals(QObject):
     """Defines signals for the icon loading worker."""
+
     icon_loaded = Signal(QWidget, QIcon)  # widget instance, loaded icon
     error = Signal(str, str)  # file_path, error message
 
+
 class IconLoadWorker(QRunnable):
     """Worker thread to load an icon for a specific file path."""
-    def __init__(self, file_path: str, target_widget: QWidget, signals: IconWorkerSignals):
+
+    def __init__(
+        self, file_path: str, target_widget: QWidget, signals: IconWorkerSignals
+    ):
         super().__init__()
         self.file_path = file_path
         self.target_widget = target_widget

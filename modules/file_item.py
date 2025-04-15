@@ -1,4 +1,3 @@
-import os
 from typing import Optional
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel
 from PySide6.QtGui import QIcon, QMouseEvent, QDesktopServices

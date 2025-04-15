@@ -1,10 +1,8 @@
 import logging
 from typing import Optional
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import QSize # Import QSize
 
-# Import the refactored components
-from .settings_manager import SettingsManager # Import SettingsManager
+from .settings_manager import SettingsManager
 from .icon_provider import DefaultIconProvider
 from .icon_validators import validate_path
 from .icon_dispatcher import IconDispatcher
@@ -12,8 +10,9 @@ from .icon_dispatcher import IconDispatcher
 # --- Global Variables (Lazy Initialized) ---
 _icon_provider: Optional[DefaultIconProvider] = None
 _icon_dispatcher: Optional[IconDispatcher] = None
-_unknown_icon: Optional[QIcon] = None # Fallback unknown icon
-_initialized = False # For custom components initialization
+_unknown_icon: Optional[QIcon] = None  # Fallback unknown icon
+_initialized = False  # For custom components initialization
+
 
 # --- Initialization Function (for custom components) ---
 # Removed global _qt_icon_provider instance
@@ -26,21 +25,21 @@ def _initialize_icon_components():
     try:
         # Load all settings
         (
-            _, # drawers (not needed here)
-            _, # window_pos (not needed here)
-            _, # bg_color (not needed here)
-            _, # start_flag (not needed here)
+            _,  # drawers (not needed here)
+            _,  # window_pos (not needed here)
+            _,  # bg_color (not needed here)
+            _,  # start_flag (not needed here)
             icon_folder_path,
             icon_file_theme,
             icon_unknown_theme,
-            thumbnail_qsize
+            thumbnail_qsize,
         ) = SettingsManager.load_settings()
 
         # Initialize provider with loaded settings
         _icon_provider = DefaultIconProvider(
             folder_icon_path=icon_folder_path,
             file_icon_theme=icon_file_theme,
-            unknown_icon_theme=icon_unknown_theme
+            unknown_icon_theme=icon_unknown_theme,
         )
         # Initialize dispatcher with provider and thumbnail size
         _icon_dispatcher = IconDispatcher(_icon_provider, thumbnail_qsize)
@@ -54,8 +53,9 @@ def _initialize_icon_components():
         # Ensure fallbacks are set even on error
         _icon_provider = None
         _icon_dispatcher = None
-        _unknown_icon = QIcon() # Basic empty icon
-        _initialized = True # Mark as initialized to prevent retries
+        _unknown_icon = QIcon()  # Basic empty icon
+        _initialized = True  # Mark as initialized to prevent retries
+
 
 # --- Public API ---
 def get_icon_for_path(full_path: str) -> QIcon:
@@ -95,8 +95,10 @@ def get_icon_for_path(full_path: str) -> QIcon:
     # It's better to validate once before dispatching
     validated_path_info = validate_path(full_path)
     if not validated_path_info:
-        logging.debug(f"Path validation failed for '{full_path}', returning fallback icon.")
-        return local_unknown_icon # Return fallback icon if path is invalid
+        logging.debug(
+            f"Path validation failed for '{full_path}', returning fallback icon."
+        )
+        return local_unknown_icon  # Return fallback icon if path is invalid
 
     # 2. Call the dispatcher with the validated info
     try:
@@ -108,9 +110,6 @@ def get_icon_for_path(full_path: str) -> QIcon:
     except Exception as e:
         logging.error(
             f"Error during icon dispatch for path '{full_path}': {e}",
-            exc_info=True # Include stack trace in log
+            exc_info=True,  # Include stack trace in log
         )
-        return local_unknown_icon # Return fallback icon on unexpected error
-
-# --- Cleanup ---
-# (No explicit cleanup needed for these components in this structure)
+        return local_unknown_icon  # Return fallback icon on unexpected error

@@ -5,8 +5,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
 )
 from PySide6.QtCore import Qt, QPoint, Signal
-from PySide6.QtGui import QIcon # Removed unused QFont
+from PySide6.QtGui import QIcon
 from typing import Optional
+
+
 class DragArea(QWidget):
     settingsRequested = Signal()
     dragFinished = Signal()

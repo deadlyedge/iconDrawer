@@ -1,11 +1,9 @@
-import os
 from typing import List, Optional, TYPE_CHECKING, Tuple
 from PySide6.QtCore import (
     QObject,
     QPoint,
     QSize,
     Slot,
-    QThreadPool,
     Signal,
 )
 from PySide6.QtWidgets import QListWidgetItem, QMessageBox

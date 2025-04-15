@@ -1,12 +1,12 @@
 import os
 import shutil
-import logging  # Already imported, ensure it stays
+import logging
 from typing import (
     Optional,
     Callable,
     TYPE_CHECKING,
     List,
-)  # Ensure List, Dict are imported
+)
 
 from PySide6.QtWidgets import (
     QWidget,
@@ -14,20 +14,19 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QGridLayout,
     QLabel,
-    QSizePolicy,  # Import QSizePolicy
+    QSizePolicy,
     QMessageBox,
     QHBoxLayout,
     QPushButton,
 )
 
-# logging is imported above
 from PySide6.QtGui import (
     QIcon,
     QDesktopServices,
     QFontMetrics,
     QResizeEvent,
     QMouseEvent,
-    QPaintEvent,  # Keep QPaintEvent import
+    QPaintEvent,
     QDragEnterEvent,
     QDragMoveEvent,
     QDropEvent,
@@ -41,7 +40,6 @@ from PySide6.QtCore import (
     QThreadPool,
     Slot,
 )
-# TYPE_CHECKING is imported above
 
 from .custom_size_grip import CustomSizeGrip
 from .content_utils import calculate_available_label_width, truncate_text
@@ -238,11 +236,13 @@ class DrawerContentWidget(QWidget):
         )  # Add container with stretch
 
         # Add Refresh Button
-        self.refresh_button = QPushButton("🔄") # Or use an icon
+        self.refresh_button = QPushButton("🔄")  # Or use an icon
         self.refresh_button.setObjectName("refreshButton")
         self.refresh_button.setToolTip("刷新当前文件夹内容")
         self.refresh_button.clicked.connect(self._refresh_content)
-        self.header_layout.addWidget(self.refresh_button, 0) # Add refresh button without stretch
+        self.header_layout.addWidget(
+            self.refresh_button, 0
+        )  # Add refresh button without stretch
 
         # Add Close Button
         self.close_button = QPushButton("X")
