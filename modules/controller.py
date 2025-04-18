@@ -14,7 +14,7 @@ import logging
 # Import icon_utils and DefaultIconProvider for initialization and type hint
 import modules.icon_utils
 from modules.icon_provider import DefaultIconProvider
-from modules.data_manager import DataManager, FileInfo
+from modules.drawer_data_manager import DataManager, FileInfo
 
 # Configure basic logging
 logging.basicConfig(
@@ -75,8 +75,8 @@ class AppController(QObject):
         # Add icon_provider attribute
         self.icon_provider: Optional[DefaultIconProvider] = None
         # --- DataManager 集成 ---
-        self.data_manager = DataManager()
-        self.data_manager.directoryChanged.connect(self.on_directory_changed)
+        self.drawer_data_manager = DataManager()
+        self.drawer_data_manager.directoryChanged.connect(self.on_directory_changed)
 
         # Explicitly initialize icon components here
         modules.icon_utils._initialize_icon_components()
@@ -172,7 +172,7 @@ class AppController(QObject):
                 self._main_view.add_drawer_item(new_drawer_data)
                 self.save_settings()
                 # 新增抽屉后同步刷新缓存
-                self.data_manager.reload_drawer_content(folder_path_str)
+                self.drawer_data_manager.reload_drawer_content(folder_path_str)
             else:
                 # Handle invalid folder selection
                 logging.error(
@@ -213,7 +213,7 @@ class AppController(QObject):
         """通过 DataManager 获取预加载数据。"""
         # 记录最近一次请求的目录，用于切换抽屉时自动刷新
         self._last_requested_folder = drawer_path
-        return self.data_manager.get_file_list(drawer_path)
+        return self.drawer_data_manager.get_file_list(drawer_path)
 
     # --- Slot Handlers for View Signals ---
 

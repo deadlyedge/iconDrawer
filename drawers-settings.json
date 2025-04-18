@@ -36,8 +36,8 @@
       "name": "桌面抽屉",
       "path": "D:\\users\\Documents\\桌面抽屉",
       "size": {
-        "width": 476,
-        "height": 380
+        "width": 300,
+        "height": 221
       }
     }
   ],
@@ -46,9 +46,9 @@
     "y": 176
   },
   "background_color_hsla": [
-    188,
-    82,
-    21,
+    41,
+    100,
+    29,
     0.7
   ],
   "start_with_windows": true,

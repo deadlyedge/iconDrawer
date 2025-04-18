@@ -4,7 +4,7 @@ from PySide6.QtGui import QIcon # Import QIcon
 from PySide6.QtCore import QFile, QIODevice, QTextStream
 import logging
 from modules.main_window import MainWindow
-from modules.data_manager import DataManager  # 导入统一数据管理器
+from modules.drawer_data_manager import DataManager  # 导入统一数据管理器
 
 # Configure basic logging (adjust level and format as needed for production)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -37,10 +37,10 @@ if __name__ == "__main__":
     mainWindow.show() # Don't show initially, rely on tray icon to show/hide
 
     # 初始化 DataManager
-    data_manager = DataManager()
+    drawer_data_manager = DataManager()
     # 连接 DataManager 信号到 controller 槽
     if mainWindow.controller is not None:
-        data_manager.directoryChanged.connect(mainWindow.controller.on_directory_changed)
+        drawer_data_manager.directoryChanged.connect(mainWindow.controller.on_directory_changed)
         # 可选：如需监听预加载完成信号，可在此连接
         # data_manager.preloadFinished.connect(mainWindow.controller.on_preload_finished)
     else:
@@ -57,12 +57,12 @@ if __name__ == "__main__":
     except Exception as e:
         logging.error(f"获取抽屉目录失败: {e}")
 
-    data_manager.start_monitor(drawer_paths)
+    drawer_data_manager.start_monitor(drawer_paths)
 
     try:
         exit_code = app.exec()
     finally:
         # 程序退出时停止监控
-        data_manager.stop_monitor()
+        drawer_data_manager.stop_monitor()
 
     sys.exit(exit_code)

@@ -40,8 +40,8 @@ from PySide6.QtCore import (
     QThreadPool,
 )
 
-from .custom_size_grip import CustomSizeGrip
-from .content_utils import calculate_available_label_width
+from .drawer_custom_size_grip import CustomSizeGrip
+from .drawer_utils import calculate_available_label_width
 
 # 引入拆分后的异步加载和文件项模块
 from .file_item import FileIconWidget
@@ -264,7 +264,7 @@ class DrawerContentWidget(QWidget):
         file_list = None
         if self.controller:
             # 先同步刷新缓存，再取最新数据
-            self.controller.data_manager.reload_drawer_content(path)
+            self.controller.drawer_data_manager.reload_drawer_content(path)
             file_list = self.controller.get_preloaded_file_list(path)
         self.update_with_file_list(path, file_list)
 
@@ -376,7 +376,7 @@ class DrawerContentWidget(QWidget):
             logging.info(f"Force refreshing content for: {self.current_folder}")
             try:
                 # 通过 DataManager 强制同步刷新
-                new_file_list = self.controller.data_manager.reload_drawer_content(
+                new_file_list = self.controller.drawer_data_manager.reload_drawer_content(
                     self.current_folder
                 )
                 # Update the view with the newly fetched list

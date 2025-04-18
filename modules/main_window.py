@@ -17,9 +17,9 @@ import logging  # Import logging
 
 from modules.settings_manager import DrawerDict  # Import SettingsManager
 from modules.list import DrawerListWidget
-from modules.content import DrawerContentWidget
-from modules.content_utils import IDrawerContent
-from modules.drag_area import DragArea
+from modules.drawer_ui import DrawerContentWidget
+from modules.drawer_utils import IDrawerContent
+from modules.window_drag_area import DragArea
 from modules.settings_dialog import SettingsDialog  # Import SettingsDialog
 
 # Forward declare AppController for type hints if direct import is problematic
