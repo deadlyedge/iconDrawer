@@ -29,7 +29,7 @@ from PySide6.QtGui import (
 from PySide6.QtCore import Qt, QSize, QUrl, Signal, QThreadPool
 
 from .drawer_custom_size_grip import CustomSizeGrip
-from .drawer_utils import calculate_available_label_width
+from .utils import calculate_available_label_width
 from .file_item import FileIconWidget
 
 if TYPE_CHECKING:

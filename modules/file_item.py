@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
 from PySide6.QtGui import QIcon, QMouseEvent, QDesktopServices
 from PySide6.QtCore import QSize, Qt, QUrl, QThreadPool
 from .icon_loader import IconWorkerSignals, IconLoadWorker
-from .drawer_utils import truncate_text
+from .utils import truncate_text
 
 
 class FileIconWidget(QWidget):
