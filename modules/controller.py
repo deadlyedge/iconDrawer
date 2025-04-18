@@ -11,9 +11,8 @@ from modules.settings_manager import SettingsManager, DrawerDict
 from pathlib import Path
 import logging
 
-# Import icon_utils and DefaultIconProvider for initialization and type hint
-import modules.icon_utils
-from modules.icon_provider import DefaultIconProvider
+from modules.icon_loader import _initialize_icon_components, _icon_provider
+from modules.icon_dispatcher import DefaultIconProvider
 from modules.drawer_data_manager import DataManager, FileInfo
 
 # Configure basic logging
@@ -79,9 +78,9 @@ class AppController(QObject):
         self.drawer_data_manager.directoryChanged.connect(self.on_directory_changed)
 
         # Explicitly initialize icon components here
-        modules.icon_utils._initialize_icon_components()
+        _initialize_icon_components()
         # Assign the initialized provider to the controller attribute
-        self.icon_provider = modules.icon_utils._icon_provider
+        self.icon_provider = _icon_provider
         if not self.icon_provider:
             logging.critical("Icon provider failed to initialize in controller!")
             # Handle critical failure? Maybe raise an exception or use a dummy provider?
