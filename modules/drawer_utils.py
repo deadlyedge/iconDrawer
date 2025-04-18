@@ -1,10 +1,10 @@
-import logging  # Import logging
+import logging 
 from PySide6.QtWidgets import (
     QLabel,
     QHBoxLayout,
     QWidget,
     QPushButton,
-)  # Added QPushButton
+) 
 from PySide6.QtGui import QFontMetrics
 from PySide6.QtCore import Qt, QSize
 from typing import Protocol, Any
