@@ -1,7 +1,8 @@
 from typing import Optional
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QSizePolicy
 from PySide6.QtGui import QIcon, QMouseEvent, QDesktopServices
-from PySide6.QtCore import QSize, Qt, QUrl
+from PySide6.QtCore import QSize, Qt, QUrl, QThreadPool
+from .icon_loader import IconWorkerSignals, IconLoadWorker
 
 class FileIconWidget(QWidget):
     """
@@ -57,10 +58,32 @@ class FileIconWidget(QWidget):
     def load_icon(self, placeholder_icon: QIcon, icon_size: QSize):
         """
         读取并设置文件或文件夹的图标，若无法读取则使用占位图标。
-        这里可以扩展为异步加载或缓存机制。
+        这里实现异步加载图标的逻辑，使用modules.icon_loader中的IconLoadWorker。
         """
-        # 这里简单示例，直接使用传入的占位图标
+        # 先设置占位图标，防止加载延迟时无图标显示
         self.set_icon(placeholder_icon, icon_size)
+
+        signals = IconWorkerSignals()
+        # 连接信号时，确保传递widget和icon参数正确调用set_icon
+        signals.icon_loaded.connect(self._on_icon_loaded)
+        signals.error.connect(self._on_icon_load_error)  # 可扩展错误处理
+
+        # 确保传入文件路径给IconLoadWorker用于读取图标
+        worker = IconLoadWorker(self.file_path, self, signals)
+        QThreadPool.globalInstance().start(worker)
+
+    def _on_icon_loaded(self, widget: QWidget, icon: QIcon):
+        """Slot to receive loaded icons and update the widget."""
+        if widget is self:
+            # 使用预先传入的icon_size参数，避免使用控件当前尺寸可能不准确
+            # 这里假设icon_size作为实例变量保存
+            icon_size = getattr(self, '_icon_size', QSize(96, 96))
+            self.set_icon(icon, icon_size)
+
+    def _on_icon_load_error(self, file_path: str, error_message: str):
+        """Slot to handle icon loading errors."""
+        # 这里可以添加错误处理逻辑，比如日志记录或显示默认图标
+        pass
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         """

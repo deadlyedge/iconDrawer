@@ -38,14 +38,12 @@ from PySide6.QtCore import (
     QUrl,
     Signal,
     QThreadPool,
-    Slot,
 )
 
 from .custom_size_grip import CustomSizeGrip
-from .content_utils import calculate_available_label_width, truncate_text
+from .content_utils import calculate_available_label_width
 
 # 引入拆分后的异步加载和文件项模块
-from .icon_loader import IconWorkerSignals, IconLoadWorker
 from .file_item import FileIconWidget
 
 # Forward declare AppController 和 FileInfo
@@ -299,6 +297,7 @@ class DrawerContentWidget(QWidget):
 
         try:
             for file_info in file_list:
+                # 传入完整文件路径，确保FileIconWidget能正确读取图标
                 placeholder_icon = (
                     self.placeholder_folder_icon
                     if file_info.is_dir
@@ -326,42 +325,47 @@ class DrawerContentWidget(QWidget):
 
     def _start_async_icon_loading(self):
         """Starts background tasks to load real icons for visible items."""
+        # 迁移异步加载逻辑到FileIconWidget，content.py中不再启动单独的worker
+        # 这里调用每个FileIconWidget的load_icon方法即可
         if not self.items:
             return
         logging.debug(
             f"Starting async icon load for {len(self.items)} items in {self.current_folder}"
         )
         for item_widget in self.items:
-            if isinstance(item_widget, FileIconWidget):  # Ensure it's the right type
-                signals = IconWorkerSignals()
-                # Connect signal to the slot *before* starting worker
-                signals.icon_loaded.connect(self._on_icon_loaded)
-                signals.error.connect(self._on_icon_load_error)
-                worker = IconLoadWorker(item_widget.file_path, item_widget, signals)
-                self.icon_load_pool.start(worker)
-
-    @Slot(QWidget, QIcon)
-    def _on_icon_loaded(self, widget: QWidget, icon: QIcon):
-        """Slot to receive loaded icons and update the widget."""
-        # Check if the widget still exists and belongs to the current view
-        if isinstance(widget, FileIconWidget) and widget in self.items:
-            # Check if the current_folder hasn't changed since the task started
-            if os.path.dirname(widget.file_path) == self.current_folder:
-                widget.set_icon(icon, self.icon_size)
-            else:
-                logging.debug(
-                    f"Ignoring loaded icon for {widget.file_path} as folder changed."
+            if isinstance(item_widget, FileIconWidget):
+                # 传入占位图标和图标大小，由FileIconWidget内部异步加载
+                placeholder_icon = (
+                    self.placeholder_folder_icon
+                    if item_widget.is_dir
+                    else self.placeholder_file_icon
                 )
-        else:
-            logging.debug("Ignoring loaded icon for widget not found or invalid type.")
+                if placeholder_icon is None:
+                    placeholder_icon = QIcon()
+                item_widget.load_icon(placeholder_icon, self.icon_size)
 
-    @Slot(str, str)
-    def _on_icon_load_error(self, file_path: str, error_message: str):
-        """Slot to handle icon loading errors."""
-        # Find the widget corresponding to the path? Might be slow.
-        # Or just log the error.
-        logging.warning(f"Failed to load icon for {file_path}: {error_message}")
-        # Optionally update the widget with an 'error' icon?
+    # @Slot(QWidget, QIcon)
+    # def _on_icon_loaded(self, widget: QWidget, icon: QIcon):
+    #     """Slot to receive loaded icons and update the widget."""
+    #     # Check if the widget still exists and belongs to the current view
+    #     if isinstance(widget, FileIconWidget) and widget in self.items:
+    #         # Check if the current_folder hasn't changed since the task started
+    #         if os.path.dirname(widget.file_path) == self.current_folder:
+    #             widget.set_icon(icon, self.icon_size)
+    #         else:
+    #             logging.debug(
+    #                 f"Ignoring loaded icon for {widget.file_path} as folder changed."
+    #             )
+    #     else:
+    #         logging.debug("Ignoring loaded icon for widget not found or invalid type.")
+
+    # @Slot(str, str)
+    # def _on_icon_load_error(self, file_path: str, error_message: str):
+    #     """Slot to handle icon loading errors."""
+    #     # Find the widget corresponding to the path? Might be slow.
+    #     # Or just log the error.
+    #     logging.warning(f"Failed to load icon for {file_path}: {error_message}")
+    #     # Optionally update the widget with an 'error' icon?
 
     def _refresh_content(self) -> None:
         """
@@ -401,6 +405,7 @@ class DrawerContentWidget(QWidget):
         """
         Creates a file item widget with a placeholder icon.
         """
+        # 传入完整文件路径，确保FileIconWidget能正确读取图标
         container_widget = FileIconWidget(file_info.path, file_info.is_dir)
         container_widget.setFixedSize(self.item_size[0], self.item_size[1])
 
