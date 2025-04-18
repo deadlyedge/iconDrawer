@@ -404,43 +404,11 @@ class DrawerContentWidget(QWidget):
         container_widget = FileIconWidget(file_info.path, file_info.is_dir)
         container_widget.setFixedSize(self.item_size[0], self.item_size[1])
 
-        # --- Icon Label (Placeholder) ---
-        icon_label = QLabel()
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        icon_label.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        # Set placeholder pixmap
-        pixmap = placeholder_icon.pixmap(self.icon_size)
-        if (
-            pixmap.width() > self.icon_size.width()
-            or pixmap.height() > self.icon_size.height()
-        ):
-            pixmap = pixmap.scaled(
-                self.icon_size,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
-        icon_label.setPixmap(pixmap)
-        # icon_label.setStyleSheet("background-color: transparent;")
-        container_widget.icon_label = icon_label  # Store reference in widget
+        # 使用FileIconWidget的接口设置图标和文本
+        container_widget.load_icon(placeholder_icon, self.icon_size)
+        text_available_width = self.item_size[0] - 10  # 保留内边距
+        container_widget.set_text(file_info.name, text_available_width)
 
-        # --- Text Label ---
-        text_label = QLabel(file_info.name)
-        text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        text_label.setWordWrap(True)
-        text_available_width = self.item_size[0] - 10  # Keep padding
-        text_label.setMinimumWidth(text_available_width)
-        display_text = truncate_text(file_info.name, text_label, text_available_width)
-        text_label.setText(display_text)
-        text_label.setToolTip(file_info.name)  # Tooltip is the name
-        # text_label.setStyleSheet("background-color: transparent;")
-
-        # --- Add to Layout ---
-        container_widget.content_layout.addWidget(
-            icon_label, 0, Qt.AlignmentFlag.AlignCenter
-        )
-        container_widget.content_layout.addWidget(
-            text_label, 0, Qt.AlignmentFlag.AlignCenter
-        )
         return container_widget
 
     def relayout_grid(self) -> None:

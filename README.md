@@ -74,5 +74,6 @@ Anyway, one thing is very important: the goal of icon drawer is to manage the de
 - The window layout and interface style of this application are easy to extend. Contributions for new features and interface improvements are welcome.
 
 ## TODOs
-- drag in to copy or move files to drawers
-- bug: icons not listed correctly fit the area untill the drawer is opened again.
+- make a new module for folder read, with cache and force re-read.
+- add preload back.
+- simplify icon collector.
