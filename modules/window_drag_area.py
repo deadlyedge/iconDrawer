@@ -21,6 +21,7 @@ class DragArea(QWidget):
         super().__init__(parent)
         self.setObjectName("dragArea")
         self._dragPos: Optional[QPoint] = None
+        self._draggable: bool = True
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(10, 0, 10, 0)
@@ -44,10 +45,18 @@ class DragArea(QWidget):
 
         self.settingsButton.clicked.connect(self.on_settings_clicked)
 
+    def setDraggable(self, enabled: bool) -> None:
+        self._draggable = enabled
+        self.dragLabel.setVisible(True if self._draggable else False)
+        self.settingsButton.setVisible(True if self._draggable else False)
+
     def on_settings_clicked(self) -> None:
         self.settingsRequested.emit()
 
     def mousePressEvent(self, event) -> None:
+        if not self._draggable:
+            event.ignore()
+            return
         if event.button() == Qt.MouseButton.LeftButton:
             main_window = self.window()
             self._dragPos = (
@@ -56,6 +65,9 @@ class DragArea(QWidget):
             event.accept()
 
     def mouseMoveEvent(self, event) -> None:
+        if not self._draggable:
+            event.ignore()
+            return
         if self._dragPos is not None and event.buttons() & Qt.MouseButton.LeftButton:
             main_window = self.window()
             newPos = event.globalPosition().toPoint() - self._dragPos

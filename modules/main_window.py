@@ -267,16 +267,24 @@ class MainWindow(QMainWindow):
 
         self.tray_menu = QMenu(self)
         self.tray_menu.setObjectName("trayMenu")
-        self.tray_menu.setStyleSheet(
-            "background-color: rgba(50, 50, 50, 200); border: 1px solid #424242;"
-        )
+        # self.tray_menu.setStyleSheet(
+        #     "background-color: hsla(0, 0%, 0%, 1); border: 1px solid #eee;"
+        # )
         show_hide_action = QAction("显示/隐藏", self)
+        show_hide_action.setProperty("isTrayAction", True)
         quit_action = QAction("退出", self)
+        quit_action.setProperty("isTrayAction", True)
+
+        self.lock_position_action = QAction("锁定窗口位置", self)
+        self.lock_position_action.setCheckable(True)
+        self.lock_position_action.setProperty("isTrayAction", True)
+        self.lock_position_action.toggled.connect(self._on_lock_position_toggled)
 
         show_hide_action.triggered.connect(self._toggle_window_visibility)
         quit_action.triggered.connect(self._quit_application)
 
         self.tray_menu.addAction(show_hide_action)
+        self.tray_menu.addAction(self.lock_position_action)
         self.tray_menu.addSeparator()
         self.tray_menu.addAction(quit_action)
 
@@ -288,6 +296,10 @@ class MainWindow(QMainWindow):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             self._toggle_window_visibility()
 
+    def _on_lock_position_toggled(self, locked: bool) -> None:
+        if hasattr(self, "dragArea") and self.dragArea:
+            self.dragArea.setDraggable(not locked)
+            self.dragArea.setEnabled(not locked)
     def _toggle_window_visibility(self) -> None:
         if self.isVisible():
             self.hide()

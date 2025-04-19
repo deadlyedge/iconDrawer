@@ -233,17 +233,21 @@ QDialog#settingsDialog QDialogButtonBox QPushButton:pressed {
 
 /* 系统托盘菜单 */
 QMenu#trayMenu {
-	background-color: rgba(50, 50, 50, 200);
-	border: 1px solid #424242;
+	background-color: hsla(0, 0%, 20%, 1);
+	border: 1px solid hsla(0, 0%, 80%, 1);
 }
 
 QMenu#trayMenu QAction {
-	color: #e0e0e0;
+	color: hsla(0, 0%, 90%, 1);
 }
 
 QMenu#trayMenu QAction:hover {
-	background-color: rgba(255, 255, 255, 30);
+	background-color: hsla(0, 0%, 50%, 1);
 }
+
+/* QAction[isTrayAction="true"]:hover {
+	background-color: hsla(0, 0%, 50%, 1);
+} */
 
 /* 文件夹路径容器 */
 QWidget[isFolderPathLayout="true"] {
