@@ -1,14 +1,6 @@
 {
   "drawers": [
     {
-      "name": "3x",
-      "path": "D:\\users\\Desktop\\3x",
-      "size": {
-        "width": 585,
-        "height": 490
-      }
-    },
-    {
       "name": "Netch",
       "path": "D:\\users\\Desktop\\Netch",
       "size": {
@@ -42,8 +34,8 @@
     }
   ],
   "window_position": {
-    "x": 453,
-    "y": 250
+    "x": 335,
+    "y": 212
   },
   "background_color_hsla": [
     41,

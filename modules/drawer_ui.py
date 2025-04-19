@@ -198,7 +198,7 @@ class DrawerContentWidget(QWidget):
         self.current_folder = folder_path
         if self.folder_label:
             self.folder_label.setText(folder_path)
-            self.folder_label.setToolTip(folder_path)
+            self.folder_label.setToolTip(f"click to open: {folder_path}")
 
         self.clear_grid()
         self.items.clear()
@@ -386,7 +386,7 @@ class DrawerContentWidget(QWidget):
                 self.current_folder, Qt.TextElideMode.ElideLeft, available_width
             )
             self.folder_label.setText(elided_text)
-            self.folder_label.setToolTip(self.current_folder)
+            self.folder_label.setToolTip(f"click to open: {self.current_folder}")
         except Exception as e:
             logging.error(f"Error updating folder label text: {e}")
             if self.folder_label:

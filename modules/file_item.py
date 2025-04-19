@@ -58,7 +58,6 @@ class FileIconWidget(QWidget):
                     Qt.AspectRatioMode.KeepAspectRatio,
                     Qt.TransformationMode.SmoothTransformation,
                 )
-            # pixmap = pixmap.scaled(icon_size, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.icon_label.setPixmap(pixmap)
 
     def set_text(self, text: str, max_width: int):

@@ -1,8 +1,9 @@
 import sys
-from PySide6.QtWidgets import QApplication
-from PySide6.QtGui import QIcon # Import QIcon
-from PySide6.QtCore import QFile, QIODevice, QTextStream
 import logging
+from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
+from PySide6.QtCore import QFile, QIODevice, QTextStream
+
 from modules.main_window import MainWindow
 from modules.drawer_data_manager import DataManager  # 导入统一数据管理器
 

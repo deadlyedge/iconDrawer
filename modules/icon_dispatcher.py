@@ -15,7 +15,7 @@ from modules.icon_workers import (
 )
 
 try:
-    import LnkParse3
+    import LnkParse3  # noqa: F401
 
     _HAS_LNKPARSE = True
 except ImportError:
