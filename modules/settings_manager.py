@@ -43,7 +43,7 @@ class SettingsModel(BaseModel):
     # New settings for defaults
     default_icon_folder_path: str = "asset/icons/folder_icon.png"
     default_icon_file_theme: str = "text-x-generic"  # Theme name for generic file
-    default_icon_unknown_theme: str = "unknown"  # Theme name for unknown
+    default_icon_unknown_theme: str = "asset/icons/question_unknown.png"  # Theme name for unknown
     thumbnail_size: SizeModel = Field(default=SizeModel(width=64, height=64))
 
 
