@@ -18,7 +18,6 @@ from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent
 from modules.settings_manager import DrawerDict
 from modules.list import DrawerListWidget
 from modules.drawer_ui import DrawerContentWidget
-# from modules.drawer_utils import IDrawerContent
 from modules.window_drag_area import DragArea
 from modules.settings_dialog import SettingsDialog
 
@@ -89,7 +88,7 @@ class MainWindow(QMainWindow):
     def _setup_left_panel(self, mainLayout: QHBoxLayout) -> None:
         self.leftPanel = QWidget()
         self.leftPanel.setObjectName("leftPanel")
-        self.leftPanel.setFixedSize(210, 300)
+        self.leftPanel.setFixedSize(210, 210)
 
         leftLayout = QVBoxLayout(self.leftPanel)
         leftLayout.setContentsMargins(0, 0, 0, 0)
@@ -101,7 +100,7 @@ class MainWindow(QMainWindow):
 
         self.drawerList = DrawerListWidget(self.leftPanel)
         self.drawerList.setObjectName("drawerList")
-        self.drawerList.setFixedSize(210, 240)
+        # self.drawerList.setFixedSize(210, 240)
         leftLayout.addWidget(self.drawerList)
 
         self.addButton = QPushButton("Add Drawer", self.leftPanel)
@@ -300,6 +299,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, "dragArea") and self.dragArea:
             self.dragArea.setDraggable(not locked)
             self.dragArea.setEnabled(not locked)
+        if hasattr(self, "addButton") and self.addButton:
+            self.addButton.setEnabled(not locked)
+            self.addButton.setVisible(not locked)
+
     def _toggle_window_visibility(self) -> None:
         if self.isVisible():
             self.hide()
