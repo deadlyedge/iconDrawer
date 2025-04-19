@@ -56,12 +56,14 @@ def _initialize_icon_components():
             icon_file_theme,
             icon_unknown_theme,
             thumbnail_qsize,
+            extension_icon_map,
         ) = SettingsManager.load_settings()
 
         _icon_provider = DefaultIconProvider(
             folder_icon_path=icon_folder_path,
             file_icon_theme=icon_file_theme,
             unknown_icon_theme=icon_unknown_theme,
+            extension_icon_map=extension_icon_map,
         )
         _icon_dispatcher = IconDispatcher(_icon_provider, thumbnail_qsize)
         _unknown_icon = _icon_provider.get_unknown_icon()

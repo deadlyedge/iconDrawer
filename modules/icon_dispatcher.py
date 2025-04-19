@@ -27,10 +27,16 @@ class DefaultIconProvider:
     """管理和提供默认图标的类，基于配置的路径和主题加载图标。"""
 
     def __init__(
-        self, folder_icon_path: str, file_icon_theme: str, unknown_icon_theme: str
+        self,
+        folder_icon_path: str,
+        file_icon_theme: str,
+        unknown_icon_theme: str,
+        extension_icon_map: Optional[dict[str, str]] = None,
     ):
         self._icons: dict[str, QIcon] = {}
         self._load_default_icons(folder_icon_path, file_icon_theme, unknown_icon_theme)
+        if extension_icon_map is not None:
+            self._load_extension_icons(extension_icon_map)
 
     def _load_default_icons(
         self, folder_icon_path: str, file_icon_theme: str, unknown_icon_theme: str
@@ -46,6 +52,16 @@ class DefaultIconProvider:
 
         self._icons["file"] = QIcon.fromTheme(file_icon_theme, QIcon())
         self._icons["unknown"] = QIcon.fromTheme(unknown_icon_theme, QIcon())
+
+    def _load_extension_icons(self, extension_icon_map: dict[str, str]):
+        """根据扩展名映射加载对应图标，路径优先，其次主题图标。"""
+        for ext, icon_path_or_theme in extension_icon_map.items():
+            if os.path.exists(icon_path_or_theme):
+                icon = QIcon(icon_path_or_theme)
+            else:
+                icon = QIcon.fromTheme(icon_path_or_theme, QIcon())
+            if not icon.isNull():
+                self._icons[ext.lower()] = icon
 
     def get_icon(self, icon_type: str) -> QIcon:
         """获取指定类型的默认图标，找不到时返回未知图标。"""
@@ -122,6 +138,13 @@ class IconDispatcher:
         logging.debug(
             f"Dispatching icon request for: {full_path} (Type: {path_type}, Ext: {extension})"
         )
+
+        # 新增：优先根据扩展名映射返回图标
+        if path_type == "file" and extension:
+            ext_icon = self.icon_provider.get_icon_for_extension(extension)
+            if ext_icon is not None and not ext_icon.isNull():
+                logging.debug(f"Extension icon found for {extension} at {full_path}")
+                return ext_icon
 
         if path_type == "file":
             if self.thumbnail_worker.can_handle(dict(path_info)):

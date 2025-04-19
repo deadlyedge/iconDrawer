@@ -57,6 +57,7 @@ class AppController(QObject):
         )
         self._locked: bool = False
         self._locked_item_data: Optional[DrawerDict] = None
+        self._extension_icon_map: dict[str, str] = {}
 
         self.icon_provider: Optional[DefaultIconProvider] = None
         self.drawer_data_manager = DataManager()
@@ -80,6 +81,7 @@ class AppController(QObject):
             icon_file_theme,
             icon_unknown_theme,
             thumbnail_qsize,
+            extension_icon_map,
         ) = self.settings_manager.load_settings()
 
         self._drawers_data = drawers
@@ -90,6 +92,7 @@ class AppController(QObject):
         self._default_icon_file_theme = icon_file_theme
         self._default_icon_unknown_theme = icon_unknown_theme
         self._thumbnail_size = thumbnail_qsize
+        self._extension_icon_map = extension_icon_map or {}
 
         self._main_view.populate_drawer_list(self._drawers_data)
         if self._window_position:
@@ -110,6 +113,7 @@ class AppController(QObject):
             default_icon_file_theme=self._default_icon_file_theme,
             default_icon_unknown_theme=self._default_icon_unknown_theme,
             thumbnail_size=self._thumbnail_size,
+            extension_icon_map=self._extension_icon_map,
         )
 
     def add_new_drawer(self) -> None:
@@ -268,8 +272,12 @@ class AppController(QObject):
             drawer_name = self._locked_item_data.get("name")
             if drawer_name:
                 for drawer in self._drawers_data:
+                    # Ensure drawer has a "size" key before comparing
                     if drawer.get("name") == drawer_name:
-                        if drawer.get("size") != current_size:
+                        if (
+                            not isinstance(drawer.get("size"), QSize)
+                            or drawer.get("size") != current_size
+                        ):
                             drawer["size"] = current_size
                         break
 

@@ -43,8 +43,13 @@ class SettingsModel(BaseModel):
     # New settings for defaults
     default_icon_folder_path: str = "asset/icons/folder_icon.png"
     default_icon_file_theme: str = "text-x-generic"  # Theme name for generic file
-    default_icon_unknown_theme: str = "asset/icons/question_unknown.png"  # Theme name for unknown
+    default_icon_unknown_theme: str = (
+        "asset/icons/question_unknown.png"  # Theme name for unknown
+    )
     thumbnail_size: SizeModel = Field(default=SizeModel(width=64, height=64))
+    extension_icon_map: Dict[str, str] = Field(
+        default_factory=lambda: {".uri": "asset/icons/browser_url.png"}
+    )
 
 
 DrawerDict = Dict[str, Any]
@@ -74,11 +79,12 @@ class SettingsManager:
         str,  # icon_file_theme
         str,  # icon_unknown_theme
         QSize,  # thumbnail_qsize
+        Dict[str, str],  # extension_icon_map
     ]:
         """
         Loads settings using Pydantic models for validation.
         Returns a tuple containing drawers, window_pos, bg_color, start_flag,
-        icon paths/themes, and thumbnail size.
+        icon paths/themes, thumbnail size, and extension icon map.
         """
         settings: SettingsModel
         try:
@@ -116,7 +122,8 @@ class SettingsManager:
                     }
                     if drawer_model.size:
                         drawer_dict["size"] = QSize(
-                            drawer_model.size.width, drawer_model.size.height
+                            drawer_model.size.width,
+                            drawer_model.size.height,
                         )
                     app_drawers.append(drawer_dict)
                 except Exception as drawer_err:
@@ -140,6 +147,7 @@ class SettingsManager:
             app_thumbnail_size = QSize(
                 settings.thumbnail_size.width, settings.thumbnail_size.height
             )
+            app_extension_icon_map = settings.extension_icon_map
 
             # --- Convert loaded HSLA to CSS standard format ---
             # Check if loaded data is likely old format (all floats <= 1.0)
@@ -185,6 +193,7 @@ class SettingsManager:
             app_icon_file_theme,
             app_icon_unknown_theme,
             app_thumbnail_size,
+            app_extension_icon_map,
         )
 
     @staticmethod
@@ -203,6 +212,7 @@ class SettingsManager:
         thumbnail_size: QSize = QSize(
             DEFAULT_THUMBNAIL_SIZE.width, DEFAULT_THUMBNAIL_SIZE.height
         ),
+        extension_icon_map: Optional[Dict[str, str]] = None,
     ) -> None:
         """
         Saves settings using Pydantic models for serialization.
@@ -259,6 +269,7 @@ class SettingsManager:
             "thumbnail_size": SizeModel(
                 width=thumbnail_size.width(), height=thumbnail_size.height()
             ),
+            "extension_icon_map": extension_icon_map or {},
         }
         # Remove None values before validation if Pydantic defaults should apply
         settings_data_cleaned = {

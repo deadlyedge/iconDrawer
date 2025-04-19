@@ -4,24 +4,24 @@
       "name": "Netch",
       "path": "D:\\users\\Desktop\\Netch",
       "size": {
-        "width": 389,
-        "height": 368
+        "width": 403,
+        "height": 324
       }
     },
     {
       "name": "mkvtoolnix",
       "path": "D:\\users\\Desktop\\mkvtoolnix",
       "size": {
-        "width": 478,
-        "height": 551
+        "width": 477,
+        "height": 460
       }
     },
     {
       "name": "DaVinci Resolve",
       "path": "C:\\Users\\xdrea\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Blackmagic Design\\DaVinci Resolve",
       "size": {
-        "width": 357,
-        "height": 229
+        "width": 407,
+        "height": 265
       }
     },
     {
@@ -29,26 +29,29 @@
       "path": "D:\\users\\Documents\\桌面抽屉",
       "size": {
         "width": 300,
-        "height": 200
+        "height": 207
       }
     }
   ],
   "window_position": {
-    "x": 172,
-    "y": 189
+    "x": 66,
+    "y": 71
   },
   "background_color_hsla": [
     41,
-    100,
-    29,
-    0.7
+    0,
+    0,
+    0.18
   ],
   "start_with_windows": true,
   "default_icon_folder_path": "asset/icons/folder_icon.png",
   "default_icon_file_theme": "text-x-generic",
-  "default_icon_unknown_theme": "unknown",
+  "default_icon_unknown_theme": "asset/icons/question_unknown.png",
   "thumbnail_size": {
     "width": 96,
     "height": 96
+  },
+  "extension_icon_map": {
+    ".url": "asset/icons/browser_url.png"
   }
 }
