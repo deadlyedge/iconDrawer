@@ -62,6 +62,9 @@ Anyway, one thing is very important: the goal of icon drawer is to manage the de
 2.  **Run the Program**:
     ```bash
     python main.py
+
+    # or using uv
+    uv run main.py
     ```
 
 3.  **Build with Nuitka**:

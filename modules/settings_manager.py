@@ -138,50 +138,50 @@ class SettingsManager:
                 settings.window_position.x, settings.window_position.y
             )
 
-            # Use loaded or default values from the validated model
-            app_bg_color_raw = settings.background_color_hsla
-            app_start_with_windows = settings.start_with_windows
-            app_icon_folder_path = settings.default_icon_folder_path
-            app_icon_file_theme = settings.default_icon_file_theme
-            app_icon_unknown_theme = settings.default_icon_unknown_theme
-            app_thumbnail_size = QSize(
-                settings.thumbnail_size.width, settings.thumbnail_size.height
-            )
-            app_extension_icon_map = settings.extension_icon_map
+        # Use loaded or default values from the validated model
+        app_bg_color_raw = settings.background_color_hsla
+        app_start_with_windows = settings.start_with_windows
+        app_icon_folder_path = settings.default_icon_folder_path
+        app_icon_file_theme = settings.default_icon_file_theme
+        app_icon_unknown_theme = settings.default_icon_unknown_theme
+        app_thumbnail_size = QSize(
+            settings.thumbnail_size.width, settings.thumbnail_size.height
+        )
+        app_extension_icon_map = settings.extension_icon_map
 
-            # --- Convert loaded HSLA to CSS standard format ---
-            # Check if loaded data is likely old format (all floats <= 1.0)
-            is_old_format = all(
-                isinstance(x, float) and 0.0 <= x <= 1.0 for x in app_bg_color_raw
-            )
+        # --- Convert loaded HSLA to CSS standard format ---
+        # Check if loaded data is likely old format (all floats <= 1.0)
+        is_old_format = all(
+            isinstance(x, float) and 0.0 <= x <= 1.0 for x in app_bg_color_raw
+        )
 
-            if is_old_format and len(app_bg_color_raw) == 4:
-                logging.info(
-                    "Converting background color from old format (0-1 floats) to CSS format."
-                )
-                h_f, s_f, l_f, a_f = app_bg_color_raw
-                app_bg_color_css = (
-                    round(h_f * 359),  # H: 0-359 int
-                    round(s_f * 100),  # S: 0-100 int
-                    round(l_f * 100),  # L: 0-100 int
-                    a_f,  # A: 0.0-1.0 float
-                )
-            elif (
-                isinstance(app_bg_color_raw, tuple)
-                and len(app_bg_color_raw) == 4
-                and isinstance(app_bg_color_raw[0], int)
-                and isinstance(app_bg_color_raw[1], int)
-                and isinstance(app_bg_color_raw[2], int)
-                and isinstance(app_bg_color_raw[3], float)
-            ):
-                # Assume it's already in the correct CSS format
-                app_bg_color_css = app_bg_color_raw
-            else:
-                # Invalid format or length, use default
-                logging.warning(
-                    f"Invalid background color format loaded: {app_bg_color_raw}. Using default."
-                )
-                app_bg_color_css = SettingsManager.DEFAULT_BG_COLOR_HSLA
+        if is_old_format and len(app_bg_color_raw) == 4:
+            logging.info(
+                "Converting background color from old format (0-1 floats) to CSS format."
+            )
+            h_f, s_f, l_f, a_f = app_bg_color_raw
+            app_bg_color_css = (
+                round(h_f * 359),  # H: 0-359 int
+                round(s_f * 100),  # S: 0-100 int
+                round(l_f * 100),  # L: 0-100 int
+                a_f,  # A: 0.0-1.0 float
+            )
+        elif (
+            isinstance(app_bg_color_raw, tuple)
+            and len(app_bg_color_raw) == 4
+            and isinstance(app_bg_color_raw[0], int)
+            and isinstance(app_bg_color_raw[1], int)
+            and isinstance(app_bg_color_raw[2], int)
+            and isinstance(app_bg_color_raw[3], float)
+        ):
+            # Assume it's already in the correct CSS format
+            app_bg_color_css = app_bg_color_raw
+        else:
+            # Invalid format or length, use default
+            logging.warning(
+                f"Invalid background color format loaded: {app_bg_color_raw}. Using default."
+            )
+            app_bg_color_css = SettingsManager.DEFAULT_BG_COLOR_HSLA
 
         # This return statement should be here, after processing all settings
         return (
