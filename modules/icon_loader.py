@@ -44,9 +44,11 @@ class IconLoadWorker(QRunnable):
 def _initialize_icon_components():
     global _icon_provider, _icon_dispatcher, _unknown_icon, _initialized
     if _initialized:
+        logging.debug("_initialize_icon_components: Already initialized, skipping.")
         return
 
     try:
+        logging.debug("_initialize_icon_components: Starting initialization.")
         (
             _,
             _,
@@ -58,6 +60,9 @@ def _initialize_icon_components():
             thumbnail_qsize,
             extension_icon_map,
         ) = SettingsManager.load_settings()
+        logging.debug(
+            f"_initialize_icon_components: Loaded settings: folder_icon_path={icon_folder_path}, file_icon_theme={icon_file_theme}, unknown_icon_theme={icon_unknown_theme}"
+        )
 
         _icon_provider = DefaultIconProvider(
             folder_icon_path=icon_folder_path,
@@ -65,6 +70,8 @@ def _initialize_icon_components():
             unknown_icon_theme=icon_unknown_theme,
             extension_icon_map=extension_icon_map,
         )
+        logging.debug("_initialize_icon_components: DefaultIconProvider created.")
+
         _icon_dispatcher = IconDispatcher(_icon_provider, thumbnail_qsize)
         _unknown_icon = _icon_provider.get_unknown_icon()
 
@@ -103,3 +110,8 @@ def get_icon_for_path(full_path: str) -> QIcon:
             f"Error during icon dispatch for path '{full_path}': {e}", exc_info=True
         )
         return local_unknown_icon
+
+
+def get_icon_provider() -> Optional[DefaultIconProvider]:
+    _initialize_icon_components()
+    return _icon_provider

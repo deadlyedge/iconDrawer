@@ -51,7 +51,10 @@ class DefaultIconProvider:
             self._icons["folder"] = QIcon.fromTheme("folder", QIcon())
 
         self._icons["file"] = QIcon.fromTheme(file_icon_theme, QIcon())
-        self._icons["unknown"] = QIcon.fromTheme(unknown_icon_theme, QIcon())
+        if os.path.exists(unknown_icon_theme):
+            self._icons["unknown"] = QIcon(unknown_icon_theme)
+        else:
+            self._icons["unknown"] = QIcon.fromTheme(unknown_icon_theme, QIcon())
 
     def _load_extension_icons(self, extension_icon_map: dict[str, str]):
         """根据扩展名映射加载对应图标，路径优先，其次主题图标。"""

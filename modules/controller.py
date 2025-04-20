@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QListWidgetItem, QMessageBox
 from modules.settings_manager import SettingsManager, DrawerDict
 from pathlib import Path
 
-from modules.icon_loader import _initialize_icon_components, _icon_provider
+from modules.icon_loader import _initialize_icon_components, get_icon_provider
 from modules.icon_dispatcher import DefaultIconProvider
 from modules.drawer_data_manager import DataManager, FileInfo
 
@@ -64,7 +64,9 @@ class AppController(QObject):
         self.drawer_data_manager.directoryChanged.connect(self.on_directory_changed)
 
         _initialize_icon_components()
-        self.icon_provider = _icon_provider
+        icon_provider = get_icon_provider()
+        logging.debug(f"AppController.__init__: icon_provider = {icon_provider}")
+        self.icon_provider = icon_provider
         if not self.icon_provider:
             logging.critical("Icon provider failed to initialize in controller!")
 
