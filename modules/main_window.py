@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QApplication,
 )
-from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication, Slot
+from PySide6.QtCore import Qt, QPoint, QSize, Signal, QCoreApplication, Slot, QTimer
 from PySide6.QtGui import QMoveEvent, QAction, QIcon, QCloseEvent
 
 from modules.settings_manager import DrawerDict
@@ -187,6 +187,7 @@ class MainWindow(QMainWindow):
         self.drawerContent.resize(target_size)
         self.drawerContent.move(self.leftPanel.width() + self.content_spacing, 0)
         self.drawerContent.update_content(folder_path)
+        QTimer.singleShot(0, self.drawerContent.relayout_grid)
         self.drawerContent.setVisible(True)
         self.drawerContent.raise_()
 

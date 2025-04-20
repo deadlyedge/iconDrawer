@@ -98,6 +98,13 @@ class AppController(QObject):
         if self._window_position:
             self._main_view.set_initial_position(self._window_position)
 
+        # 新增：启动监控并预加载所有抽屉内容
+        paths = [d["path"] for d in self._drawers_data if "path" in d]
+        if paths:
+            self.drawer_data_manager.start_monitor(paths)
+            for p in paths:
+                self.drawer_data_manager.reload_drawer_content(p)
+
     def save_settings(self) -> None:
         """保存当前状态（抽屉列表和窗口位置）。"""
         current_pos = self._main_view.get_current_position()
